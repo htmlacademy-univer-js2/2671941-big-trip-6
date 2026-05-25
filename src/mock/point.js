@@ -1,5 +1,3 @@
-import { getRandomArrayElement } from '../utils.js';
-
 const mockPoints = [
   {
     id: '13478420-d6f6-4e7c-b5fc-4402e9db8062',
@@ -314,6 +312,9 @@ const mockPoints = [
   }
 ];
 
-const getRandomPoint = () => getRandomArrayElement(mockPoints);
+function getRandomPoints(count) {
+  const shuffledPoints = [...mockPoints].sort(() => Math.random() - 0.5);
+  return shuffledPoints.slice(0, count);
+}
 
-export { getRandomPoint };
+export { getRandomPoints };

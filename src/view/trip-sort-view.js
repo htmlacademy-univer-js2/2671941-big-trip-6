@@ -1,6 +1,6 @@
 import AbstractView from '../framework/view/abstract-view.js';
 import { upperFirst } from '../utils.js';
-import { SORT_TYPES } from '../const.js';
+import { SORT_TYPES, SortType } from '../const.js';
 
 const createSortItem = (sortType, currentSortType, isDisabled = false) => `
   <div class="trip-sort__item trip-sort__item--${sortType}">
@@ -16,16 +16,17 @@ const createSortItem = (sortType, currentSortType, isDisabled = false) => `
     <label
       class="trip-sort__btn"
       for="sort-${sortType}"
+      data-sort-type="${sortType}"
     >
       ${upperFirst(sortType)}
     </label>
   </div>
 `;
 
-const createTripSortTemplate = (currentSortType = 'day') => {
+const createTripSortTemplate = (currentSortType = SortType.DAY) => {
   const disabledSorts = {
-    event: true,
-    offer: true
+    [SortType.EVENT]: true,
+    [SortType.OFFER]: true
   };
 
   return `
@@ -36,14 +37,27 @@ const createTripSortTemplate = (currentSortType = 'day') => {
 };
 
 export default class TripSortView extends AbstractView {
-  #currentSortType = 'day';
+  #currentSortType = SortType.DAY;
+  #handleSortTypeChange = null;
 
-  constructor({ currentSortType = 'day' } = {}) {
+  constructor({ currentSortType = SortType.DAY, onSortTypeChange } = {}) {
     super();
     this.#currentSortType = currentSortType;
+    this.#handleSortTypeChange = onSortTypeChange;
+
+    this.element.querySelectorAll('.trip-sort__btn').forEach((button) => {
+      if (button.hasAttribute('data-sort-type')) {
+        button.addEventListener('click', this.#sortTypeChangeHandler);
+      }
+    });
   }
 
   get template() {
     return createTripSortTemplate(this.#currentSortType);
   }
+
+  #sortTypeChangeHandler = (evt) => {
+    const sortType = evt.currentTarget.dataset.sortType;
+    this.#handleSortTypeChange?.(sortType);
+  };
 }
