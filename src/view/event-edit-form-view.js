@@ -1,4 +1,4 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { upperFirst, formatEventDate } from '../utils.js';
 import { EVENT_TYPES } from '../const.js';
 
@@ -150,115 +150,134 @@ const createEventEditFormTemplate = (data = {}) => {
   const typeIcon = type ? type.toLowerCase() : 'flight';
 
   return `
-  <form class="event event--edit" action="#" method="post">
-    <header class="event__header">
+  <li class="trip-events__item">
+    <form class="event event--edit" action="#" method="post">
+      <header class="event__header">
 
-      <div class="event__type-wrapper">
-        <label class="event__type event__type-btn" for="event-type-toggle-1">
-          <span class="visually-hidden">Choose event type</span>
-          <img
-            class="event__type-icon"
-            width="17"
-            height="17"
-            src="img/icons/${typeIcon}.png"
-            alt="Event type icon"
+        <div class="event__type-wrapper">
+          <label class="event__type event__type-btn" for="event-type-toggle-1">
+            <span class="visually-hidden">Choose event type</span>
+            <img
+              class="event__type-icon"
+              width="17"
+              height="17"
+              src="img/icons/${typeIcon}.png"
+              alt="Event type icon"
+            >
+          </label>
+
+          <input
+            class="event__type-toggle visually-hidden"
+            id="event-type-toggle-1"
+            type="checkbox"
           >
-        </label>
 
-        <input
-          class="event__type-toggle visually-hidden"
-          id="event-type-toggle-1"
-          type="checkbox"
-        >
+          ${createEventTypeList(type)}
+        </div>
 
-        ${createEventTypeList(type)}
-      </div>
+        <div class="event__field-group event__field-group--destination">
+          <label class="event__label event__type-output" for="event-destination-1">
+            ${upperFirst(type)}
+          </label>
+          <input
+            class="event__input event__input--destination"
+            id="event-destination-1"
+            type="text"
+            name="event-destination"
+            value="${destinationName}"
+            list="destination-list-1"
+          >
+          ${createDestinationsList(allDestinations, destinationName)}
+        </div>
 
-      <div class="event__field-group event__field-group--destination">
-        <label class="event__label event__type-output" for="event-destination-1">
-          ${upperFirst(type)}
-        </label>
-        <input
-          class="event__input event__input--destination"
-          id="event-destination-1"
-          type="text"
-          name="event-destination"
-          value="${destinationName}"
-          list="destination-list-1"
-        >
-        ${createDestinationsList(allDestinations, destinationName)}
-      </div>
+        ${createTimeBlock(dateFrom, dateTo)}
 
-      ${createTimeBlock(dateFrom, dateTo)}
+        <div class="event__field-group event__field-group--price">
+          <label class="event__label" for="event-price-1">
+            <span class="visually-hidden">Price</span>
+            &euro;
+          </label>
+          <input
+            class="event__input event__input--price"
+            id="event-price-1"
+            type="text"
+            name="event-price"
+            value="${basePrice}"
+          >
+        </div>
 
-      <div class="event__field-group event__field-group--price">
-        <label class="event__label" for="event-price-1">
-          <span class="visually-hidden">Price</span>
-          &euro;
-        </label>
-        <input
-          class="event__input event__input--price"
-          id="event-price-1"
-          type="text"
-          name="event-price"
-          value="${basePrice}"
-        >
-      </div>
+        <button class="event__save-btn btn btn--blue" type="submit">
+          Save
+        </button>
 
-      <button class="event__save-btn btn btn--blue" type="submit">
-        Save
-      </button>
+        <button class="event__reset-btn" type="reset">
+          Delete
+        </button>
 
-      <button class="event__reset-btn" type="reset">
-        Delete
-      </button>
+        <button class="event__rollup-btn" type="button">
+          <span class="visually-hidden">Open event</span>
+        </button>
 
-      <button class="event__rollup-btn" type="button">
-        <span class="visually-hidden">Open event</span>
-      </button>
+      </header>
 
-    </header>
-
-    <section class="event__details">
-      ${createOffersSection(offers?.offers, selectedOffers)}
-      ${createDestinationSection(destination)}
-    </section>
-  </form>
+      <section class="event__details">
+        ${createOffersSection(offers?.offers, selectedOffers)}
+        ${createDestinationSection(destination)}
+      </section>
+    </form>
+  </li>
 `;
 };
 
-export default class EventEditFormView {
+export default class EventEditFormView extends AbstractView {
+  #point = {};
+  #offers = null;
+  #destination = null;
+  #allDestinations = [];
+  #onFormSubmit = null;
+  #onRollupClick = null;
+
   constructor({
     point = {},
     offers = null,
     destination = null,
-    allDestinations = []
+    allDestinations = [],
+    onFormSubmit = null,
+    onRollupClick = null
   } = {}) {
-    this.element = null;
-    this.point = point;
-    this.offers = offers;
-    this.destination = destination;
-    this.allDestinations = allDestinations;
+    super();
+    this.#point = point;
+    this.#offers = offers;
+    this.#destination = destination;
+    this.#allDestinations = allDestinations;
+    this.#onFormSubmit = onFormSubmit;
+    this.#onRollupClick = onRollupClick;
+
+    this.element
+      .querySelector('form')
+      .addEventListener('submit', this.#formSubmitHandler);
+
+    this.element
+      .querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#rollupClickHandler);
   }
 
-  getTemplate() {
+  get template() {
     return createEventEditFormTemplate({
-      point: this.point,
-      destination: this.destination,
-      allDestinations: this.allDestinations,
-      offers: this.offers
+      point: this.#point,
+      destination: this.#destination,
+      allDestinations: this.#allDestinations,
+      offers: this.#offers
     });
   }
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
+  #formSubmitHandler = (evt) => {
+    evt.preventDefault();
+    this.#onFormSubmit?.();
+  };
 
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
-  }
+  #rollupClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#onRollupClick?.();
+  };
 }

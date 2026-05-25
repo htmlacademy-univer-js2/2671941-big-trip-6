@@ -1,4 +1,4 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { upperFirst } from '../utils.js';
 import { FILTER_TYPES } from '../const.js';
 
@@ -28,25 +28,15 @@ const createTripFilterTemplate = (currentFilterType = 'everything') => `
   </form>
 `;
 
-export default class TripFilterView {
+export default class TripFilterView extends AbstractView {
+  #currentFilterType = 'everything';
+
   constructor({ currentFilterType = 'everything' } = {}) {
-    this.element = null;
-    this.currentFilterType = currentFilterType;
+    super();
+    this.#currentFilterType = currentFilterType;
   }
 
-  getTemplate() {
-    return createTripFilterTemplate(this.currentFilterType);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    return createTripFilterTemplate(this.#currentFilterType);
   }
 }

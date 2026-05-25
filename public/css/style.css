@@ -331,6 +331,7 @@ main {
   list-style: none; }
 
 .trip-events__item {
+  list-style-type: none;
   margin-bottom: 54px;
   margin-left: auto; }
 
