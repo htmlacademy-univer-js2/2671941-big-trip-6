@@ -64,6 +64,36 @@ export default class PointPresenter {
     this.#pointComponent = newPointComponent;
   }
 
+  setSaving() {
+    this.#editFormComponent.updateElement({
+      isDisabled: true,
+      isSaving: true
+    });
+  }
+
+  setDeleting() {
+    this.#editFormComponent.updateElement({
+      isDisabled: true,
+      isDeleting: true
+    });
+  }
+
+  setAborting() {
+    const resetFormState = () => {
+      this.#editFormComponent.updateElement({
+        isDisabled: false,
+        isSaving: false,
+        isDeleting: false
+      });
+    };
+
+    this.#editFormComponent.shake(resetFormState);
+  }
+
+  isEditFormOpen() {
+    return this.#editFormComponent !== null;
+  }
+
   #createTripPointComponent() {
     const destination = this.#pointsModel.getDestinationsById(this.#point.destination);
     const offers = this.#pointsModel.getOffersById(this.#point.type, this.#point.offers) || [];
