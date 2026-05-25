@@ -1,6 +1,7 @@
 import EventEditFormView from '../view/event-edit-form-view.js';
 import TripPointView from '../view/trip-point-view.js';
 import { render, replace, remove } from '../framework/render.js';
+import { UserAction, UpdateType } from '../const.js';
 
 export default class PointPresenter {
   #eventsContainer = null;
@@ -77,19 +78,34 @@ export default class PointPresenter {
   }
 
   #createEditFormComponent() {
-    const destination = this.#pointsModel.getDestinationsById(this.#point.destination);
-    const offersByType = this.#pointsModel.getOffersByType(this.#point.type);
     const allDestinations = this.#pointsModel.getDestinations();
+    const allOffers = this.#pointsModel.getOffers();
 
     return new EventEditFormView({
       point: this.#point,
-      offers: offersByType,
-      destination,
+      offers: allOffers,
       allDestinations,
-      onFormSubmit: this.#replaceEditFormToPoint,
-      onRollupClick: this.#replaceEditFormToPoint
+      onFormSubmit: this.#handleFormSubmit,
+      onRollupClick: this.#replaceEditFormToPoint,
+      onDeleteClick: this.#handleDeleteClick
     });
   }
+
+  #handleFormSubmit = (updatedPoint) => {
+    this.#onDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.PATCH,
+      updatedPoint
+    );
+  };
+
+  #handleDeleteClick = (point) => {
+    this.#onDataChange(
+      UserAction.DELETE_POINT,
+      UpdateType.MINOR,
+      point
+    );
+  };
 
   #replacePointToEditForm = () => {
     this.#onModeChange();
@@ -108,10 +124,14 @@ export default class PointPresenter {
   };
 
   #favoriteClickHandler = () => {
-    this.#onDataChange({
-      ...this.#point,
-      isFavorite: !this.#point.isFavorite
-    });
+    this.#onDataChange(
+      UserAction.UPDATE_POINT,
+      UpdateType.PATCH,
+      {
+        ...this.#point,
+        isFavorite: !this.#point.isFavorite
+      }
+    );
   };
 
   #escKeyDownHandler = (evt) => {

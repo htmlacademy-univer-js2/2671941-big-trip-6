@@ -36,14 +36,28 @@ const createTripFilterTemplate = (filtersInfo, currentFilterType = 'everything')
 export default class TripFilterView extends AbstractView {
   #currentFilterType = 'everything';
   #filtersInfo = {};
+  #handleFilterTypeChange = null;
 
-  constructor({ currentFilterType = 'everything', filtersInfo } = {}) {
+  constructor({ currentFilterType = 'everything', filtersInfo, onFilterTypeChange } = {}) {
     super();
     this.#currentFilterType = currentFilterType;
     this.#filtersInfo = filtersInfo;
+    this.#handleFilterTypeChange = onFilterTypeChange;
+
+    this.element.addEventListener('change', this.#filterTypeChangeHandler);
   }
 
   get template() {
     return createTripFilterTemplate(this.#filtersInfo, this.#currentFilterType);
   }
+
+  #filterTypeChangeHandler = (evt) => {
+    evt.preventDefault();
+
+    if (evt.target.tagName !== 'INPUT') {
+      return;
+    }
+
+    this.#handleFilterTypeChange(evt.target.value);
+  };
 }
