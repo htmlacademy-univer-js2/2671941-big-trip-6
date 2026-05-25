@@ -64,9 +64,26 @@ export default class NewPointPresenter {
     this.#onDestroy();
   };
 
+  setSaving() {
+    this.#newPointComponent.updateElement({
+      isDisabled: true,
+      isSaving: true
+    });
+  }
+
+  setAborting() {
+    const resetFormState = () => {
+      this.#newPointComponent.updateElement({
+        isDisabled: false,
+        isSaving: false
+      });
+    };
+
+    this.#newPointComponent.shake(resetFormState);
+  }
+
   #handleFormSubmit = (newPoint) => {
     this.#onDataChange(newPoint);
-    this.destroy();
   };
 
   #escKeyDownHandler = (evt) => {

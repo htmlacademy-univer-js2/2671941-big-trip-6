@@ -4,7 +4,7 @@ import 'flatpickr/dist/flatpickr.min.css';
 import { upperFirst, formatEventDate } from '../utils.js';
 import { EVENT_TYPES } from '../const.js';
 
-const createEventTypeItem = (type, currentType) => `
+const createEventTypeItem = (type, currentType, isDisabled) => `
   <div class="event__type-item">
     <input
       id="event-type-${type}-1"
@@ -13,6 +13,7 @@ const createEventTypeItem = (type, currentType) => `
       name="event-type"
       value="${type}"
       ${type === currentType ? 'checked' : ''}
+      ${isDisabled ? 'disabled' : ''}
     >
     <label
       class="event__type-label event__type-label--${type}"
@@ -23,16 +24,16 @@ const createEventTypeItem = (type, currentType) => `
   </div>
 `;
 
-const createEventTypeList = (currentType) => `
+const createEventTypeList = (currentType, isDisabled) => `
   <div class="event__type-list">
     <fieldset class="event__type-group">
       <legend class="visually-hidden">Event type</legend>
-      ${EVENT_TYPES.map((type) => createEventTypeItem(type, currentType)).join('')}
+      ${EVENT_TYPES.map((type) => createEventTypeItem(type, currentType, isDisabled)).join('')}
     </fieldset>
   </div>
 `;
 
-const createTimeBlock = (dateFrom, dateTo) => `
+const createTimeBlock = (dateFrom, dateTo, isDisabled) => `
   <div class="event__field-group event__field-group--time">
     <label class="visually-hidden" for="event-start-time-1">From</label>
     <input
@@ -41,6 +42,7 @@ const createTimeBlock = (dateFrom, dateTo) => `
       type="text"
       name="event-start-time"
       value="${formatEventDate(dateFrom)}"
+      ${isDisabled ? 'disabled' : ''}
       autocomplete="off"
       autocorrect="off"
     >
@@ -52,13 +54,14 @@ const createTimeBlock = (dateFrom, dateTo) => `
       type="text"
       name="event-end-time"
       value="${formatEventDate(dateTo)}"
+      ${isDisabled ? 'disabled' : ''}
       autocomplete="off"
       autocorrect="off"
     >
   </div>
 `;
 
-const createOfferItem = (offer, isChecked = false) => `
+const createOfferItem = (offer, isChecked = false, isDisabled = false) => `
   <div class="event__offer-selector">
     <input
       class="event__offer-checkbox visually-hidden"
@@ -67,6 +70,7 @@ const createOfferItem = (offer, isChecked = false) => `
       name="event-offer"
       value="${offer.id}"
       ${isChecked ? 'checked' : ''}
+      ${isDisabled ? 'disabled' : ''}
     >
     <label class="event__offer-label" for="event-offer-${offer.id}">
       <span class="event__offer-title">${offer.title}</span>
@@ -76,7 +80,7 @@ const createOfferItem = (offer, isChecked = false) => `
   </div>
 `;
 
-const createOffersSection = (offers = [], selectedOffers = []) => {
+const createOffersSection = (offers = [], selectedOffers = [], isDisabled = false) => {
   if (!offers.length) {
     return '';
   }
@@ -87,7 +91,7 @@ const createOffersSection = (offers = [], selectedOffers = []) => {
       Offers
     </h3>
     <div class="event__available-offers">
-      ${offers.map((offer) => createOfferItem(offer, selectedOffers.includes(offer.id))).join('')}
+      ${offers.map((offer) => createOfferItem(offer, selectedOffers.includes(offer.id), isDisabled)).join('')}
     </div>
   </section>
 `;
@@ -152,7 +156,10 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
     dateFrom = null,
     dateTo = null,
     offers: selectedOffers = [],
-    destination: destinationId = null
+    destination: destinationId = null,
+    isDisabled = false,
+    isSaving = false,
+    isDeleting = false,
   } = state;
 
   const destination = getDestinationById(allDestinations, destinationId);
@@ -183,7 +190,7 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
             type="checkbox"
           >
 
-          ${createEventTypeList(type)}
+          ${createEventTypeList(type, isDisabled)}
         </div>
 
         <div class="event__field-group event__field-group--destination">
@@ -196,6 +203,7 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
             type="text"
             name="event-destination"
             value="${destinationName}"
+            ${isDisabled ? 'disabled' : ''}
             list="destination-list-1"
             autocomplete="off"
             autocorrect="off"
@@ -203,7 +211,7 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
           ${createDestinationsList(allDestinations, destinationName)}
         </div>
 
-        ${createTimeBlock(dateFrom, dateTo)}
+        ${createTimeBlock(dateFrom, dateTo, isDisabled)}
 
         <div class="event__field-group event__field-group--price">
           <label class="event__label" for="event-price-1">
@@ -216,6 +224,7 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
             type="number"
             name="event-price"
             value="${basePrice}"
+            ${isDisabled ? 'disabled' : ''}
             min="0"
             step="1"
             autocomplete="off"
@@ -223,12 +232,20 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
           >
         </div>
 
-        <button class="event__save-btn btn btn--blue" type="submit">
-          Save
+        <button
+          class="event__save-btn btn btn--blue"
+          type="submit"
+          ${isDisabled ? 'disabled' : ''}
+        >
+          ${isSaving ? 'Saving...' : 'Save'}
         </button>
 
-        <button class="event__reset-btn" type="reset">
-          ${isNewPoint ? 'Cancel' : 'Delete'}
+        <button
+          class="event__reset-btn"
+          type="reset"
+          ${isDisabled ? 'disabled' : ''}
+        >
+          ${isDeleting ? 'Deleting...' : (isNewPoint && 'Cancel') || 'Delete'}
         </button>
 
         ${isNewPoint ? '' : `
@@ -240,7 +257,7 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
       </header>
 
       <section class="event__details">
-        ${createOffersSection(currentOffers, selectedOffers)}
+        ${createOffersSection(currentOffers, selectedOffers, isDisabled)}
         ${createDestinationSection(destination)}
       </section>
     </form>
@@ -437,9 +454,12 @@ export default class EventEditFormView extends AbstractStatefulView {
 
     const priceInput = this.element.querySelector('.event__input--price');
     const price = Number(priceInput.value);
+    const destinationInput = this.element.querySelector('.event__input--destination');
+    const selectedDestination = getDestinationByName(this.#allDestinations, destinationInput.value);
 
     this.#onFormSubmit?.({
       ...this._state,
+      destination: selectedDestination?.id || this._state.destination,
       basePrice: price < 0 ? 0 : price
     });
   };
