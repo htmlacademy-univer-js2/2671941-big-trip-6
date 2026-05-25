@@ -1,10 +1,19 @@
-import EventCreationFormView from '../view/event-creation-form-view.js';
 import EventEditFormView from '../view/event-edit-form-view.js';
 import TripFilterView from '../view/trip-filter-view.js';
 import TripInfoView from '../view/trip-info-view.js';
 import TripPointView from '../view/trip-point-view.js';
 import TripSortView from '../view/trip-sort-view.js';
+import NoPointsView from '../view/no-points-view.js';
 import { render, replace } from '../framework/render.js';
+import {
+  sortPointsByDate,
+  countFuturePoints,
+  countPresentPoints,
+  countPastPoints,
+  getTripTitle,
+  getTripDates,
+  getTotalCost
+} from '../utils.js';
 
 export default class TripPresenter {
   #tripMainContainer = null;
@@ -24,26 +33,56 @@ export default class TripPresenter {
   }
 
   init() {
-    this.#renderTripInfo();
-    render(new TripFilterView(), this.#filtersContainer);
+    const points = [...this.#pointsModel.getPoints()];
+    const destinations = this.#pointsModel.getDestinations();
+    const offers = this.#pointsModel.getOffers();
+
+    this.#renderTripInfo(points, destinations, offers);
+
+    const filtersInfo = {
+      everything: points.length,
+      future: countFuturePoints(points),
+      present: countPresentPoints(points),
+      past: countPastPoints(points)
+    };
+
+    render(
+      new TripFilterView({
+        currentFilterType: 'everything',
+        filtersInfo
+      }),
+      this.#filtersContainer
+    );
+
     render(new TripSortView(), this.#eventsContainer);
 
-    const points = [...this.#pointsModel.getPoints()];
-
     if (points.length === 0) {
-      const creationForm = new EventCreationFormView({
-        allDestinations: this.#pointsModel.getDestinations()
-      });
-      render(creationForm, this.#eventsContainer);
+      render(new NoPointsView(), this.#eventsContainer);
       return;
     }
 
-    points.forEach((point) => this.#renderTripPoint(point));
+    sortPointsByDate(points).forEach((point) => this.#renderTripPoint(point));
   }
 
-  #renderTripInfo() {
+  #renderTripInfo(points, destinations, offers) {
+    if (!points.length) {
+      return;
+    }
+
     const tripControls = this.#tripMainContainer.querySelector('.trip-main__trip-controls');
-    render(new TripInfoView(), tripControls, 'beforebegin');
+
+    const tripDates = getTripDates(points);
+
+    render(
+      new TripInfoView({
+        title: getTripTitle(points, destinations),
+        dateFrom: tripDates.dateFrom,
+        dateTo: tripDates.dateTo,
+        totalCost: getTotalCost(points, offers)
+      }),
+      tripControls,
+      'beforebegin'
+    );
   }
 
   #renderTripPoint(point) {
