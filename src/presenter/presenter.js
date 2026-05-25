@@ -5,27 +5,44 @@ import TripPointView from '../view/trip-point-view.js';
 import TripSortView from '../view/trip-sort-view.js';
 import { render } from '../render.js';
 
-export class HeaderPresenter {
-  constructor({ container }) {
-    this.container = container;
+export default class TripPresenter {
+  constructor({ headerContainer, eventsContainer, pointsModel }) {
+    this.headerContainer = headerContainer;
+    this.eventsContainer = eventsContainer;
+    this.pointsModel = pointsModel;
   }
 
   init() {
-    render(new TripFilterView(), this.container);
-  }
-}
+    render(new TripFilterView(), this.headerContainer);
+    render(new TripSortView(), this.eventsContainer);
 
-export class MainPresenter {
-  constructor({ container }) {
-    this.container = container;
-  }
+    const points = [...this.pointsModel.getPoints()];
 
-  init() {
-    render(new TripSortView(), this.container);
-    render(new EventEditFormView(), this.container);
-    render(new EventCreationFormView(), this.container);
-    render(new TripPointView(), this.container);
-    render(new TripPointView(), this.container);
-    render(new TripPointView(), this.container);
+    if (points.length === 0) {
+      const creationForm = new EventCreationFormView({
+        allDestinations: this.pointsModel.getDestinations()
+      });
+      render(creationForm, this.eventsContainer);
+      return;
+    }
+
+    const firstPoint = points[0];
+    const editForm = new EventEditFormView({
+      point: firstPoint,
+      offers: this.pointsModel.getOffersByType(firstPoint.type),
+      destination: this.pointsModel.getDestinationsById(firstPoint.destination),
+      allDestinations: this.pointsModel.getDestinations()
+    });
+    render(editForm, this.eventsContainer);
+
+    for (let i = 1; i < points.length; i++) {
+      const point = points[i];
+      const pointView = new TripPointView({
+        point: point,
+        offers: this.pointsModel.getOffersById(point.type, point.offers) || [],
+        destination: this.pointsModel.getDestinationsById(point.destination)
+      });
+      render(pointView, this.eventsContainer);
+    }
   }
 }

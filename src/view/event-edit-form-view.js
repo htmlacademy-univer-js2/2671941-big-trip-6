@@ -1,18 +1,8 @@
-import {createElement} from '../render.js';
+import { createElement } from '../render.js';
+import { upperFirst, formatEventDate } from '../utils.js';
+import { EVENT_TYPES } from '../const.js';
 
-const EVENT_TYPES = ['taxi', 'bus', 'train', 'ship', 'drive', 'flight', 'check-in', 'sightseeing', 'restaurant'];
-
-const OFFER_TYPES = [
-  {type: 'luggage', title: 'Add luggage', price: 50},
-  {type: 'comfort', title: 'Switch to comfort', price: 80},
-  {type: 'meal', title: 'Add meal', price: 15},
-  {type: 'seats', title: 'Choose seats', price: 5},
-  {type: 'train', title: 'Travel by train', price: 40}
-];
-
-const upperFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-const createEventTypeItem = (type) => `
+const createEventTypeItem = (type, currentType) => `
   <div class="event__type-item">
     <input
       id="event-type-${type}-1"
@@ -20,6 +10,7 @@ const createEventTypeItem = (type) => `
       type="radio"
       name="event-type"
       value="${type}"
+      ${type === currentType ? 'checked' : ''}
     >
     <label
       class="event__type-label event__type-label--${type}"
@@ -30,16 +21,16 @@ const createEventTypeItem = (type) => `
   </div>
 `;
 
-const createEventTypeList = () => `
+const createEventTypeList = (currentType) => `
   <div class="event__type-list">
     <fieldset class="event__type-group">
       <legend class="visually-hidden">Event type</legend>
-      ${EVENT_TYPES.map(createEventTypeItem).join('')}
+      ${EVENT_TYPES.map((type) => createEventTypeItem(type, currentType)).join('')}
     </fieldset>
   </div>
 `;
 
-const createTimeBlock = () => `
+const createTimeBlock = (dateFrom, dateTo) => `
   <div class="event__field-group event__field-group--time">
     <label class="visually-hidden" for="event-start-time-1">From</label>
     <input
@@ -47,7 +38,7 @@ const createTimeBlock = () => `
       id="event-start-time-1"
       type="text"
       name="event-start-time"
-      value="19/03/19 00:00"
+      value="${formatEventDate(dateFrom)}"
     >
     &mdash;
     <label class="visually-hidden" for="event-end-time-1">To</label>
@@ -56,35 +47,109 @@ const createTimeBlock = () => `
       id="event-end-time-1"
       type="text"
       name="event-end-time"
-      value="19/03/19 00:00"
+      value="${formatEventDate(dateTo)}"
     >
   </div>
 `;
 
-const createOfferItem = ({type, title, price}) => `
+const createOfferItem = (offer, isChecked = false) => `
   <div class="event__offer-selector">
     <input
       class="event__offer-checkbox visually-hidden"
-      id="event-offer-${type}-1"
+      id="event-offer-${offer.id}"
       type="checkbox"
-      name="event-offer-${type}"
-      checked
+      name="event-offer"
+      value="${offer.id}"
+      ${isChecked ? 'checked' : ''}
     >
-    <label class="event__offer-label" for="event-offer-${type}-1">
-      <span class="event__offer-title">${title}</span>
+    <label class="event__offer-label" for="event-offer-${offer.id}">
+      <span class="event__offer-title">${offer.title}</span>
       &plus;&euro;&nbsp;
-      <span class="event__offer-price">${price}</span>
+      <span class="event__offer-price">${offer.price}</span>
     </label>
   </div>
 `;
 
-const createOffersSection = () => `
-  <div class="event__available-offers">
-    ${OFFER_TYPES.map(createOfferItem).join('')}
-  </div>
-`;
+const createOffersSection = (offers = [], selectedOffers = []) => {
+  if (!offers || offers.length === 0) {
+    return '';
+  }
 
-const createEventEditFormTemplate = () => `
+  return `
+  <section class="event__section event__section--offers">
+    <h3 class="event__section-title event__section-title--offers">
+      Offers
+    </h3>
+    <div class="event__available-offers">
+      ${offers.map((offer) => createOfferItem(offer, selectedOffers.includes(offer.id))).join('')}
+    </div>
+  </section>
+`;
+};
+
+const createDestinationSection = (destination) => {
+  if (!destination) {
+    return '';
+  }
+
+  const description = destination.description || '';
+  const pictures = destination.pictures || [];
+
+  const photosTape = pictures.map((pic) => `
+    <img class="event__photo" src="${pic.src}" alt="${pic.description || 'Event photo'}">
+  `).join('');
+
+  return `
+  <section class="event__section event__section--destination">
+    <h3 class="event__section-title event__section-title--destination">
+      Destination
+    </h3>
+
+    ${description ? `<p class="event__destination-description">${description}</p>` : ''}
+
+    ${pictures.length > 0 ? `
+    <div class="event__photos-container">
+      <div class="event__photos-tape">
+        ${photosTape}
+      </div>
+    </div>
+    ` : ''}
+  </section>
+`;
+};
+
+const createDestinationsList = (allDestinations = [], currentDestinationName) => {
+  const options = allDestinations.map((dest) =>
+    `<option value="${dest.name}" ${dest.name === currentDestinationName ? 'selected' : ''}></option>`
+  ).join('');
+
+  return `
+  <datalist id="destination-list-1">
+    ${options}
+  </datalist>
+`;
+};
+
+const createEventEditFormTemplate = (data = {}) => {
+  const {
+    point = {},
+    destination = null,
+    allDestinations = [],
+    offers = []
+  } = data;
+
+  const {
+    type = 'flight',
+    basePrice = '',
+    dateFrom = null,
+    dateTo = null,
+    offers: selectedOffers = []
+  } = point;
+
+  const destinationName = destination ? destination.name : '';
+  const typeIcon = type ? type.toLowerCase() : 'flight';
+
+  return `
   <form class="event event--edit" action="#" method="post">
     <header class="event__header">
 
@@ -95,7 +160,7 @@ const createEventEditFormTemplate = () => `
             class="event__type-icon"
             width="17"
             height="17"
-            src="img/icons/flight.png"
+            src="img/icons/${typeIcon}.png"
             alt="Event type icon"
           >
         </label>
@@ -106,29 +171,25 @@ const createEventEditFormTemplate = () => `
           type="checkbox"
         >
 
-        ${createEventTypeList()}
+        ${createEventTypeList(type)}
       </div>
 
       <div class="event__field-group event__field-group--destination">
         <label class="event__label event__type-output" for="event-destination-1">
-          Flight
+          ${upperFirst(type)}
         </label>
         <input
           class="event__input event__input--destination"
           id="event-destination-1"
           type="text"
           name="event-destination"
-          value="Geneva"
+          value="${destinationName}"
           list="destination-list-1"
         >
-        <datalist id="destination-list-1">
-          <option value="Amsterdam"></option>
-          <option value="Geneva"></option>
-          <option value="Chamonix"></option>
-        </datalist>
+        ${createDestinationsList(allDestinations, destinationName)}
       </div>
 
-      ${createTimeBlock()}
+      ${createTimeBlock(dateFrom, dateTo)}
 
       <div class="event__field-group event__field-group--price">
         <label class="event__label" for="event-price-1">
@@ -140,7 +201,7 @@ const createEventEditFormTemplate = () => `
           id="event-price-1"
           type="text"
           name="event-price"
-          value="160"
+          value="${basePrice}"
         >
       </div>
 
@@ -159,38 +220,34 @@ const createEventEditFormTemplate = () => `
     </header>
 
     <section class="event__details">
-
-      <section class="event__section event__section--offers">
-        <h3 class="event__section-title event__section-title--offers">
-          Offers
-        </h3>
-        ${createOffersSection()}
-      </section>
-
-      <section class="event__section event__section--destination">
-        <h3 class="event__section-title event__section-title--destination">
-          Destination
-        </h3>
-
-        <p class="event__destination-description">
-          Chamonix-Mont-Blanc is a resort area near the junction of France,
-          Switzerland and Italy. At the base of Mont Blanc, the highest summit
-          in the Alps, it's renowned for its skiing.
-        </p>
-
-      </section>
-
+      ${createOffersSection(offers?.offers, selectedOffers)}
+      ${createDestinationSection(destination)}
     </section>
   </form>
 `;
+};
 
 export default class EventEditFormView {
-  constructor() {
+  constructor({
+    point = {},
+    offers = null,
+    destination = null,
+    allDestinations = []
+  } = {}) {
     this.element = null;
+    this.point = point;
+    this.offers = offers;
+    this.destination = destination;
+    this.allDestinations = allDestinations;
   }
 
   getTemplate() {
-    return createEventEditFormTemplate();
+    return createEventEditFormTemplate({
+      point: this.point,
+      destination: this.destination,
+      allDestinations: this.allDestinations,
+      offers: this.offers
+    });
   }
 
   getElement() {

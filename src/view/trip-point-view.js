@@ -1,11 +1,61 @@
-import {createElement} from '../render.js';
+import { createElement } from '../render.js';
+import {
+  upperFirst,
+  formatEventDay,
+  formatEventMonth,
+  formatEventTime,
+  formatEventDuration,
+  formatEventISODate
+} from '../utils.js';
 
-const createTripPointTemplate = () => `
+const createOfferItem = (offer) => `
+  <li class="event__offer">
+    <span class="event__offer-title">${offer.title}</span>
+    &plus;&euro;&nbsp;
+    <span class="event__offer-price">${offer.price}</span>
+  </li>
+`;
+
+const createOffersList = (offers = []) => {
+  if (!offers || offers.length === 0) {
+    return '';
+  }
+
+  return `
+    <h4 class="visually-hidden">Offers:</h4>
+    <ul class="event__selected-offers">
+      ${offers.map(createOfferItem).join('')}
+    </ul>
+  `;
+};
+
+const createTripPointTemplate = (data = {}) => {
+  const {
+    point = {},
+    destination = null,
+    offers = []
+  } = data;
+
+  const {
+    type = 'taxi',
+    basePrice = 0,
+    dateFrom = null,
+    dateTo = null,
+    isFavorite = false
+  } = point;
+
+  const destinationName = destination ? destination.name : '';
+  const typeIcon = type ? type.toLowerCase() : 'taxi';
+  const favoriteClass = isFavorite ? 'event__favorite-btn--active' : '';
+
+  const displayOffers = offers.slice(0, 3);
+
+  return `
   <li class="trip-events__item">
     <div class="event">
 
-      <time class="event__date" datetime="2019-03-18">
-        MAR 18
+      <time class="event__date" datetime="${formatEventISODate(dateFrom)}">
+        ${dateFrom ? `${formatEventMonth(dateFrom)} ${formatEventDay(dateFrom)}` : ''}
       </time>
 
       <div class="event__type">
@@ -13,53 +63,41 @@ const createTripPointTemplate = () => `
           class="event__type-icon"
           width="42"
           height="42"
-          src="img/icons/taxi.png"
+          src="img/icons/${typeIcon}.png"
           alt="Event type icon"
         >
       </div>
 
       <h3 class="event__title">
-        Taxi Amsterdam
+        ${upperFirst(type)} ${destinationName}
       </h3>
 
       <div class="event__schedule">
         <p class="event__time">
-          <time class="event__start-time" datetime="2019-03-18T10:30">
-            10:30
+          <time class="event__start-time" datetime="${dateFrom || ''}">
+            ${dateFrom ? formatEventTime(dateFrom) : ''}
           </time>
           &mdash;
-          <time class="event__end-time" datetime="2019-03-18T11:00">
-            11:00
+          <time class="event__end-time" datetime="${dateTo || ''}">
+            ${dateTo ? formatEventTime(dateTo) : ''}
           </time>
         </p>
         <p class="event__duration">
-          30M
+          ${formatEventDuration(dateFrom, dateTo)}
         </p>
       </div>
 
       <p class="event__price">
         &euro;&nbsp;
         <span class="event__price-value">
-          20
+          ${basePrice}
         </span>
       </p>
 
-      <h4 class="visually-hidden">Offers:</h4>
-
-      <ul class="event__selected-offers">
-        <li class="event__offer">
-          <span class="event__offer-title">
-            Order Uber
-          </span>
-          &plus;&euro;&nbsp;
-          <span class="event__offer-price">
-            20
-          </span>
-        </li>
-      </ul>
+      ${createOffersList(displayOffers)}
 
       <button
-        class="event__favorite-btn event__favorite-btn--active"
+        class="event__favorite-btn ${favoriteClass}"
         type="button"
       >
         <span class="visually-hidden">Add to favorite</span>
@@ -83,14 +121,26 @@ const createTripPointTemplate = () => `
     </div>
   </li>
 `;
+};
 
 export default class TripPointView {
-  constructor() {
+  constructor({
+    point = {},
+    destination = null,
+    offers = []
+  } = {}) {
     this.element = null;
+    this.point = point;
+    this.destination = destination;
+    this.offers = offers;
   }
 
   getTemplate() {
-    return createTripPointTemplate();
+    return createTripPointTemplate({
+      point: this.point,
+      destination: this.destination,
+      offers: this.offers
+    });
   }
 
   getElement() {

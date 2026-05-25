@@ -1,0 +1,56 @@
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+
+dayjs.extend(duration);
+
+const formatEventDate = (date) => date ? dayjs(date).format('DD/MM/YY HH:mm') : '';
+
+const formatEventDay = (date) =>
+  date ? dayjs(date).format('DD') : '';
+
+const formatEventMonth = (date) =>
+  date ? dayjs(date).format('MMM').toUpperCase() : '';
+
+const formatEventTime = (date) =>
+  date ? dayjs(date).format('HH:mm') : '';
+
+const formatEventISODate = (date) =>
+  date ? dayjs(date).format('YYYY-MM-DD') : '';
+
+const formatEventDuration = (dateFrom, dateTo) => {
+  if (!dateFrom || !dateTo) {
+    return '';
+  }
+
+  const diff = dayjs(dateTo).diff(dayjs(dateFrom));
+  const d = dayjs.duration(diff);
+
+  const days = Math.floor(d.asDays());
+  const hours = d.hours();
+  const minutes = d.minutes();
+
+  if (days > 0) {
+    return `${days}D ${hours}H ${minutes}M`;
+  }
+
+  if (hours > 0) {
+    return `${hours}H ${minutes}M`;
+  }
+
+  return `${minutes}M`;
+};
+
+const upperFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+const getRandomArrayElement = (items) => items[Math.floor(Math.random() * items.length)];
+
+export {
+  upperFirst,
+  formatEventDate,
+  getRandomArrayElement,
+  formatEventDay,
+  formatEventMonth,
+  formatEventTime,
+  formatEventDuration,
+  formatEventISODate
+};

@@ -1,18 +1,8 @@
-import {createElement} from '../render.js';
+import { createElement } from '../render.js';
+import { upperFirst, formatEventDate } from '../utils.js';
+import { EVENT_TYPES } from '../const.js';
 
-const EVENT_TYPES = ['taxi', 'bus', 'train', 'ship', 'drive', 'flight', 'check-in', 'sightseeing', 'restaurant'];
-
-const OFFER_TYPES = [
-  {type: 'luggage', title: 'Add luggage', price: 30},
-  {type: 'comfort', title: 'Switch to comfort class', price: 100},
-  {type: 'meal', title: 'Add meal', price: 15},
-  {type: 'seats', title: 'Choose seats', price: 5},
-  {type: 'train', title: 'Travel by train', price: 40}
-];
-
-const upperFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-const createEventTypeItem = (type) => `
+const createEventTypeItem = (type, currentType) => `
   <div class="event__type-item">
     <input
       id="event-type-${type}-1"
@@ -20,6 +10,7 @@ const createEventTypeItem = (type) => `
       type="radio"
       name="event-type"
       value="${type}"
+      ${type === currentType ? 'checked' : ''}
     >
     <label
       class="event__type-label event__type-label--${type}"
@@ -30,16 +21,20 @@ const createEventTypeItem = (type) => `
   </div>
 `;
 
-const createEventTypeList = () => `
+const createEventTypeList = (currentType) => `
   <div class="event__type-list">
     <fieldset class="event__type-group">
       <legend class="visually-hidden">Event type</legend>
-      ${EVENT_TYPES.map(createEventTypeItem).join('')}
+      ${EVENT_TYPES.map((type) => createEventTypeItem(type, currentType)).join('')}
     </fieldset>
   </div>
 `;
 
-const createTimeBlock = () => `
+const createTimeBlock = (dateFrom, dateTo) => {
+  const startDate = formatEventDate(dateFrom);
+  const endDate = formatEventDate(dateTo);
+
+  return `
   <div class="event__field-group event__field-group--time">
     <label class="visually-hidden" for="event-start-time-1">From</label>
     <input
@@ -47,7 +42,7 @@ const createTimeBlock = () => `
       id="event-start-time-1"
       type="text"
       name="event-start-time"
-      value="19/03/19 00:00"
+      value="${startDate}"
     >
     &mdash;
     <label class="visually-hidden" for="event-end-time-1">To</label>
@@ -56,35 +51,102 @@ const createTimeBlock = () => `
       id="event-end-time-1"
       type="text"
       name="event-end-time"
-      value="19/03/19 00:00"
+      value="${endDate}"
     >
   </div>
 `;
+};
 
-const createOfferItem = ({type, title, price}) => `
+const createOfferItem = (offer, isChecked = false) => `
   <div class="event__offer-selector">
     <input
       class="event__offer-checkbox visually-hidden"
-      id="event-offer-${type}-1"
+      id="event-offer-${offer.id}"
       type="checkbox"
-      name="event-offer-${type}"
-      checked
+      name="event-offer-${offer.type || 'offer'}"
+      ${isChecked ? 'checked' : ''}
     >
-    <label class="event__offer-label" for="event-offer-${type}-1">
-      <span class="event__offer-title">${title}</span>
+    <label class="event__offer-label" for="event-offer-${offer.id}">
+      <span class="event__offer-title">${offer.title}</span>
       &plus;&euro;&nbsp;
-      <span class="event__offer-price">${price}</span>
+      <span class="event__offer-price">${offer.price}</span>
     </label>
   </div>
 `;
 
-const createOffersSection = () => `
+const createOffersSection = (offers = [], selectedOffers = []) => {
+  if (!offers || offers.length === 0) {
+    return '<div class="event__available-offers">No offers available</div>';
+  }
+
+  return `
   <div class="event__available-offers">
-    ${OFFER_TYPES.map(createOfferItem).join('')}
+    ${offers.map((offer) => createOfferItem(offer, selectedOffers.includes(offer.id))).join('')}
   </div>
 `;
+};
 
-const createEventCreationFormTemplate = () => `
+const createDestinationSection = (destination) => {
+  if (!destination) {
+    return '';
+  }
+
+  const description = destination.description || '';
+  const pictures = destination.pictures || [];
+
+  const photosTape = pictures.map((pic) => `
+    <img class="event__photo" src="${pic.src}" alt="${pic.description || 'Event photo'}">
+  `).join('');
+
+  return `
+  <section class="event__section event__section--destination">
+    <h3 class="event__section-title event__section-title--destination">
+      Destination
+    </h3>
+
+    <p class="event__destination-description">
+      ${description}
+    </p>
+
+    ${pictures.length > 0 ? `
+    <div class="event__photos-container">
+      <div class="event__photos-tape">
+        ${photosTape}
+      </div>
+    </div>
+    ` : ''}
+  </section>
+`;
+};
+
+const createDestinationsList = (allDestinations = []) => {
+  const options = allDestinations.map((dest) =>
+    `<option value="${dest.name}"></option>`
+  ).join('');
+
+  return `
+  <datalist id="destination-list-1">
+    ${options}
+  </datalist>
+`;
+};
+
+const createEventCreationFormTemplate = (data = {}) => {
+  const {
+    type = 'flight',
+    destination = null,
+    allDestinations = [],
+    dateFrom = null,
+    dateTo = null,
+    basePrice = '',
+    offers = [],
+    selectedOffers = [],
+    destinationName = destination ? destination.name : ''
+  } = data;
+
+  const typeIcon = type ? type.toLowerCase() : 'flight';
+
+  return `
   <form class="event event--edit" action="#" method="post">
     <header class="event__header">
 
@@ -95,7 +157,7 @@ const createEventCreationFormTemplate = () => `
             class="event__type-icon"
             width="17"
             height="17"
-            src="img/icons/flight.png"
+            src="img/icons/${typeIcon}.png"
             alt="Event type icon"
           >
         </label>
@@ -106,29 +168,25 @@ const createEventCreationFormTemplate = () => `
           type="checkbox"
         >
 
-        ${createEventTypeList()}
+        ${createEventTypeList(type)}
       </div>
 
       <div class="event__field-group event__field-group--destination">
         <label class="event__label event__type-output" for="event-destination-1">
-          Flight
+          ${upperFirst(type)}
         </label>
         <input
           class="event__input event__input--destination"
           id="event-destination-1"
           type="text"
           name="event-destination"
-          value="Geneva"
+          value="${destinationName}"
           list="destination-list-1"
         >
-        <datalist id="destination-list-1">
-          <option value="Amsterdam"></option>
-          <option value="Geneva"></option>
-          <option value="Chamonix"></option>
-        </datalist>
+        ${createDestinationsList(allDestinations)}
       </div>
 
-      ${createTimeBlock()}
+      ${createTimeBlock(dateFrom, dateTo)}
 
       <div class="event__field-group event__field-group--price">
         <label class="event__label" for="event-price-1">
@@ -140,7 +198,7 @@ const createEventCreationFormTemplate = () => `
           id="event-price-1"
           type="text"
           name="event-price"
-          value=""
+          value="${basePrice}"
         >
       </div>
 
@@ -155,46 +213,49 @@ const createEventCreationFormTemplate = () => `
 
     <section class="event__details">
 
+      ${offers.length > 0 ? `
       <section class="event__section event__section--offers">
         <h3 class="event__section-title event__section-title--offers">
           Offers
         </h3>
-        ${createOffersSection()}
+        ${createOffersSection(offers, selectedOffers)}
       </section>
+      ` : ''}
 
-      <section class="event__section event__section--destination">
-        <h3 class="event__section-title event__section-title--destination">
-          Destination
-        </h3>
-
-        <p class="event__destination-description">
-          Geneva is a city in Switzerland that lies at the southern tip of expansive Lac Léman.
-          Surrounded by the Alps and Jura mountains, the city has views of dramatic Mont Blanc.
-        </p>
-
-        <div class="event__photos-container">
-          <div class="event__photos-tape">
-            <img class="event__photo" src="img/photos/1.jpg" alt="Event photo">
-            <img class="event__photo" src="img/photos/2.jpg" alt="Event photo">
-            <img class="event__photo" src="img/photos/3.jpg" alt="Event photo">
-            <img class="event__photo" src="img/photos/4.jpg" alt="Event photo">
-            <img class="event__photo" src="img/photos/5.jpg" alt="Event photo">
-          </div>
-        </div>
-
-      </section>
+      ${destination ? createDestinationSection(destination, allDestinations) : ''}
 
     </section>
   </form>
 `;
+};
 
 export default class EventCreationFormView {
-  constructor() {
+  constructor({
+    point = null,
+    allOffers = [],
+    destination = null,
+    allDestinations = []
+  } = {}) {
     this.element = null;
+    this.point = point;
+    this.allOffers = allOffers;
+    this.destination = destination;
+    this.allDestinations = allDestinations;
   }
 
   getTemplate() {
-    return createEventCreationFormTemplate();
+    const data = {
+      type: this.point?.type,
+      destination: this.destination,
+      allDestinations: this.allDestinations,
+      dateFrom: this.point?.dateFrom,
+      dateTo: this.point?.dateTo,
+      basePrice: this.point?.basePrice,
+      offers: this.allOffers?.offers || [],
+      selectedOffers: this.point?.offers || []
+    };
+
+    return createEventCreationFormTemplate(data);
   }
 
   getElement() {
