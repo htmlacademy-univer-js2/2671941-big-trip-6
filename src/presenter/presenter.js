@@ -5,6 +5,7 @@ import LoadingView from '../view/loading-view.js';
 import PointPresenter from './point-presenter.js';
 import NewPointPresenter from './new-point-presenter.js';
 import { render, remove} from '../framework/render.js';
+import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 import {
   sortPointsByDate,
   sortPointsByTime,
@@ -14,6 +15,12 @@ import {
   getTotalCost
 } from '../utils.js';
 import { SortType, FilterType, UpdateType, UserAction } from '../const.js';
+
+
+const TimeLimit = {
+  LOWER_LIMIT: 350,
+  UPPER_LIMIT: 1000,
+};
 
 export default class TripPresenter {
   #tripMainContainer = null;
@@ -33,6 +40,11 @@ export default class TripPresenter {
   #loadingComponent = new LoadingView();
   #isLoading = true;
   #isLoadingError = false;
+
+  #uiBlocker = new UiBlocker({
+    lowerLimit: TimeLimit.LOWER_LIMIT,
+    upperLimit: TimeLimit.UPPER_LIMIT
+  });
 
   constructor({ tripMainContainer, eventsContainer, pointsModel, filterModel, newEventButton }) {
     this.#tripMainContainer = tripMainContainer;
@@ -229,18 +241,59 @@ export default class TripPresenter {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #handleViewAction = (actionType, updateType, update) => {
+  #handleViewAction = async (actionType, updateType, update) => {
+    const pointPresenter = this.#pointPresenters.get(update.id);
+    const isFavoriteAction =
+      actionType === UserAction.UPDATE_POINT &&
+      pointPresenter &&
+      !pointPresenter.isEditFormOpen();
+
+    if (!isFavoriteAction) {
+      this.#uiBlocker.block();
+    }
+
     switch (actionType) {
       case UserAction.UPDATE_POINT:
-        this.#pointsModel.updatePoint(updateType, update);
+        if (!isFavoriteAction) {
+          pointPresenter.setSaving();
+        }
+
+        try {
+          await this.#pointsModel.updatePoint(updateType, update);
+        } catch(err) {
+          if (!isFavoriteAction) {
+            pointPresenter.setAborting();
+          }
+        } finally {
+          if (!isFavoriteAction) {
+            this.#uiBlocker.unblock();
+          }
+        }
         break;
 
       case UserAction.ADD_POINT:
-        this.#pointsModel.addPoint(updateType, update);
+        this.#newPointPresenter.setSaving();
+
+        try {
+          await this.#pointsModel.addPoint(updateType, update);
+          this.#newPointPresenter.destroy();
+        } catch(err) {
+          this.#newPointPresenter.setAborting();
+        } finally {
+          this.#uiBlocker.unblock();
+        }
         break;
 
       case UserAction.DELETE_POINT:
-        this.#pointsModel.deletePoint(updateType, update);
+        pointPresenter.setDeleting();
+
+        try {
+          await this.#pointsModel.deletePoint(updateType, update);
+        } catch(err) {
+          pointPresenter.setAborting();
+        } finally {
+          this.#uiBlocker.unblock();
+        }
         break;
     }
   };
