@@ -1,43 +1,41 @@
-import {createElement} from '../render.js';
+import { createElement } from '../render.js';
+import { upperFirst } from '../utils.js';
+import { FILTER_TYPES } from '../const.js';
 
-const FILTER_TYPES = ['everything', 'future', 'present', 'past'];
-
-const upperFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-const createFilterItem = (type) => `
+const createFilterItem = (filterType, currentFilterType) => `
   <div class="trip-filters__filter">
     <input
-      id="filter-${type}"
+      id="filter-${filterType}"
       class="trip-filters__filter-input visually-hidden"
       type="radio"
       name="trip-filter"
-      value="${type}"
+      value="${filterType}"
+      ${filterType === currentFilterType ? 'checked' : ''}
     >
     <label
       class="trip-filters__filter-label"
-      for="filter-${type}"
+      for="filter-${filterType}"
     >
-      ${upperFirst(type)}
+      ${upperFirst(filterType)}
     </label>
   </div>
 `;
 
-const createTripFilterTemplate = () => `
-  <form class="trip-events__trip-sort trip-sort" action="#" method="get">
-    ${FILTER_TYPES.map(createFilterItem).join('')}
-    <button class="visually-hidden" type="submit">
-      Accept filter
-    </button>
+const createTripFilterTemplate = (currentFilterType = 'everything') => `
+  <form class="trip-filters" action="#" method="get">
+    ${FILTER_TYPES.map((filterType) => createFilterItem(filterType, currentFilterType)).join('')}
+    <button class="visually-hidden" type="submit">Accept filter</button>
   </form>
 `;
 
 export default class TripFilterView {
-  constructor() {
+  constructor({ currentFilterType = 'everything' } = {}) {
     this.element = null;
+    this.currentFilterType = currentFilterType;
   }
 
   getTemplate() {
-    return createTripFilterTemplate();
+    return createTripFilterTemplate(this.currentFilterType);
   }
 
   getElement() {

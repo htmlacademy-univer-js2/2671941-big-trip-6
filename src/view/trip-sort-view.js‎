@@ -1,40 +1,48 @@
-import {createElement} from '../render.js';
+import { createElement } from '../render.js';
+import { upperFirst } from '../utils.js';
+import { SORT_TYPES } from '../const.js';
 
-const SORT_TYPES = ['day', 'event', 'time', 'price', 'offer'];
-
-const upperFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-const createSortItem = (type) => `
-  <div class="trip-sort__item trip-sort__item--${type}">
+const createSortItem = (sortType, currentSortType, isDisabled = false) => `
+  <div class="trip-sort__item trip-sort__item--${sortType}">
     <input
-      id="sort-${type}"
+      id="sort-${sortType}"
       class="trip-sort__input visually-hidden"
       type="radio"
       name="trip-sort"
-      value="sort-${type}"
+      value="sort-${sortType}"
+      ${sortType === currentSortType ? 'checked' : ''}
+      ${isDisabled ? 'disabled' : ''}
     >
     <label
       class="trip-sort__btn"
-      for="sort-${type}"
+      for="sort-${sortType}"
     >
-      ${upperFirst(type)}
+      ${upperFirst(sortType)}
     </label>
   </div>
 `;
 
-const createTripSortTemplate = () => `
+const createTripSortTemplate = (currentSortType = 'day') => {
+  const disabledSorts = {
+    event: true,
+    offer: true
+  };
+
+  return `
   <form class="trip-events__trip-sort trip-sort" action="#" method="get">
-    ${SORT_TYPES.map(createSortItem).join('')}
+    ${SORT_TYPES.map((sortType) => createSortItem(sortType, currentSortType, disabledSorts[sortType])).join('')}
   </form>
 `;
+};
 
 export default class TripSortView {
-  constructor() {
+  constructor({ currentSortType = 'day' } = {}) {
     this.element = null;
+    this.currentSortType = currentSortType;
   }
 
   getTemplate() {
-    return createTripSortTemplate();
+    return createTripSortTemplate(this.currentSortType);
   }
 
   getElement() {
