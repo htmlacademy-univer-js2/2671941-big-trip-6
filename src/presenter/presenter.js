@@ -1,10 +1,9 @@
-import EventEditFormView from '../view/event-edit-form-view.js';
 import TripFilterView from '../view/trip-filter-view.js';
 import TripInfoView from '../view/trip-info-view.js';
-import TripPointView from '../view/trip-point-view.js';
 import TripSortView from '../view/trip-sort-view.js';
 import NoPointsView from '../view/no-points-view.js';
-import { render, replace } from '../framework/render.js';
+import PointPresenter from './point-presenter.js';
+import { render } from '../framework/render.js';
 import {
   sortPointsByDate,
   countFuturePoints,
@@ -21,9 +20,7 @@ export default class TripPresenter {
   #eventsContainer = null;
   #pointsModel = null;
 
-  #currentEditForm = null;
-  #currentPointComponent = null;
-  #currentPoint = null;
+  #pointPresenters = new Map();
 
   constructor({ tripMainContainer, filtersContainer, eventsContainer, pointsModel }) {
     this.#tripMainContainer = tripMainContainer;
@@ -61,7 +58,7 @@ export default class TripPresenter {
       return;
     }
 
-    sortPointsByDate(points).forEach((point) => this.#renderTripPoint(point));
+    sortPointsByDate(points).forEach((point) => this.#renderPoint(point));
   }
 
   #renderTripInfo(points, destinations, offers) {
@@ -85,74 +82,27 @@ export default class TripPresenter {
     );
   }
 
-  #renderTripPoint(point) {
-    const tripPointComponent = this.#createTripPointComponent(point);
-    render(tripPointComponent, this.#eventsContainer);
-  }
-
-  #createTripPointComponent(point) {
-    const destination = this.#pointsModel.getDestinationsById(point.destination);
-    const offers = this.#pointsModel.getOffersById(point.type, point.offers) || [];
-
-    const tripPointComponent = new TripPointView({
+  #renderPoint(point) {
+    const pointPresenter = new PointPresenter({
+      eventsContainer: this.#eventsContainer,
+      pointsModel: this.#pointsModel,
       point,
-      destination,
-      offers,
-      onEditClick: () => this.#replacePointToEditForm(point, tripPointComponent)
+      onModeChange: this.#handleModeChange,
+      onDataChange: this.#handlePointChange
     });
 
-    return tripPointComponent;
+    pointPresenter.init();
+    this.#pointPresenters.set(point.id, pointPresenter);
   }
 
-  #replacePointToEditForm(point, tripPointComponent) {
-    if (this.#currentEditForm) {
-      this.#replaceEditFormToPoint();
-    }
-
-    const destination = this.#pointsModel.getDestinationsById(point.destination);
-    const offersByType = this.#pointsModel.getOffersByType(point.type);
-    const allDestinations = this.#pointsModel.getDestinations();
-
-    this.#currentEditForm = new EventEditFormView({
-      point,
-      offers: offersByType,
-      destination,
-      allDestinations,
-      onFormSubmit: this.#replaceEditFormToPoint,
-      onRollupClick: this.#replaceEditFormToPoint
-    });
-
-    this.#currentPoint = point;
-    this.#currentPointComponent = tripPointComponent;
-
-    replace(this.#currentEditForm, this.#currentPointComponent);
-    document.addEventListener('keydown', this.#escKeyDownHandler);
-  }
-
-  #replaceEditFormToPoint = () => {
-    if (!this.#currentEditForm || !this.#currentPoint || !this.#currentPointComponent) {
-      this.#removeGlobalHandlers();
-      return;
-    }
-
-    const newTripPointComponent = this.#createTripPointComponent(this.#currentPoint);
-    replace(newTripPointComponent, this.#currentEditForm);
-
-    this.#currentEditForm = null;
-    this.#currentPointComponent = null;
-    this.#currentPoint = null;
-
-    this.#removeGlobalHandlers();
+  #handleModeChange = () => {
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
-  #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape' || evt.key === 'Esc') {
-      evt.preventDefault();
-      this.#replaceEditFormToPoint();
-    }
-  };
+  #handlePointChange = (updatedPoint) => {
+    this.#pointsModel.updatePoint(updatedPoint);
 
-  #removeGlobalHandlers() {
-    document.removeEventListener('keydown', this.#escKeyDownHandler);
-  }
+    const pointPresenter = this.#pointPresenters.get(updatedPoint.id);
+    pointPresenter.updatePoint(updatedPoint);
+  };
 }

@@ -51,4 +51,10 @@ export default class PointsModel {
 
     return offersType.offers.filter((item) => itemsId.includes(item.id));
   }
+
+  updatePoint(updatedPoint) {
+    this.points = this.points.map((point) =>
+      point.id === updatedPoint.id ? updatedPoint : point
+    );
+  }
 }
