@@ -1,6 +1,7 @@
 import TripInfoView from '../view/trip-info-view.js';
 import TripSortView from '../view/trip-sort-view.js';
 import NoPointsView from '../view/no-points-view.js';
+import LoadingView from '../view/loading-view.js';
 import PointPresenter from './point-presenter.js';
 import NewPointPresenter from './new-point-presenter.js';
 import { render, remove} from '../framework/render.js';
@@ -29,6 +30,10 @@ export default class TripPresenter {
 
   #newEventButton = null;
 
+  #loadingComponent = new LoadingView();
+  #isLoading = true;
+  #isLoadingError = false;
+
   constructor({ tripMainContainer, eventsContainer, pointsModel, filterModel, newEventButton }) {
     this.#tripMainContainer = tripMainContainer;
     this.#eventsContainer = eventsContainer;
@@ -50,6 +55,11 @@ export default class TripPresenter {
   }
 
   init() {
+    if (this.#isLoading) {
+      this.#renderLoading();
+      return;
+    }
+
     const points = this.#getFilteredPoints();
     const destinations = this.#pointsModel.getDestinations();
     const offers = this.#pointsModel.getOffers();
@@ -102,6 +112,10 @@ export default class TripPresenter {
     }
   }
 
+  #renderLoading() {
+    render(this.#loadingComponent, this.#eventsContainer);
+  }
+
   #renderTripInfo(points, destinations, offers) {
     if (this.#tripInfoComponent !== null) {
       remove(this.#tripInfoComponent);
@@ -136,7 +150,8 @@ export default class TripPresenter {
 
   #renderNoPoints() {
     this.#noPointsComponent = new NoPointsView({
-      filterType: this.#filterModel.filter
+      filterType: this.#filterModel.filter,
+      isLoadingError: this.#isLoadingError
     });
 
     render(this.#noPointsComponent, this.#eventsContainer);
@@ -162,6 +177,10 @@ export default class TripPresenter {
 
   #clearBoard() {
     this.#clearPoints();
+
+    if (this.#loadingComponent !== null) {
+      remove(this.#loadingComponent);
+    }
 
     if (this.#sortComponent !== null) {
       remove(this.#sortComponent);
@@ -194,6 +213,13 @@ export default class TripPresenter {
       case UpdateType.MAJOR:
         this.#clearBoard();
         this.#currentSortType = SortType.DAY;
+        this.init();
+        break;
+
+      case UpdateType.INIT:
+        this.#isLoading = false;
+        this.#isLoadingError = data?.isError || false;
+        this.#clearBoard();
         this.init();
         break;
     }
