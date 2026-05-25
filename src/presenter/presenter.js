@@ -214,6 +214,12 @@ export default class TripPresenter {
     switch (updateType) {
       case UpdateType.PATCH:
         this.#pointPresenters.get(data.id).updatePoint(data);
+
+        this.#renderTripInfo(
+          this.#getFilteredPoints(),
+          this.#pointsModel.getDestinations(),
+          this.#pointsModel.getOffers()
+        );
         break;
 
       case UpdateType.MINOR:
@@ -313,6 +319,15 @@ export default class TripPresenter {
     this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
     this.#currentSortType = SortType.DAY;
     this.#handleModeChange();
+
+    if (this.#noPointsComponent !== null) {
+      remove(this.#noPointsComponent);
+      this.#noPointsComponent = null;
+    }
+
+    if (this.#sortComponent === null) {
+      this.#renderSort();
+    }
 
     this.#newPointPresenter.init();
     this.#newEventButton.disabled = true;
