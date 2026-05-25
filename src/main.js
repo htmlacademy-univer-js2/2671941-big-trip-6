@@ -1,16 +1,19 @@
 import TripPresenter from './presenter/presenter.js';
-import PointsModel from './model/points-model.js'; // Убедитесь, что путь правильный
+import PointsModel from './model/points-model.js';
 
-const headerContainer = document.querySelector('.trip-controls__filters');
+const filtersContainer = document.querySelector('.trip-controls__filters');
 const eventsContainer = document.querySelector('.trip-events');
 
-// Создаем экземпляр модели
+const tripMainContainer = document.querySelector('.trip-main');
+
+
 const pointsModel = new PointsModel();
 
 const presenter = new TripPresenter({
-headerContainer: headerContainer,
-  eventsContainer: eventsContainer,
-  pointsModel: pointsModel // Добавляем модель в презентер
+  tripMainContainer,
+  filtersContainer,
+  eventsContainer,
+  pointsModel
 });
 
 presenter.init();

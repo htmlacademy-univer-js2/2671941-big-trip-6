@@ -1,4 +1,4 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { upperFirst } from '../utils.js';
 import { SORT_TYPES } from '../const.js';
 
@@ -35,25 +35,15 @@ const createTripSortTemplate = (currentSortType = 'day') => {
 `;
 };
 
-export default class TripSortView {
+export default class TripSortView extends AbstractView {
+  #currentSortType = 'day';
+
   constructor({ currentSortType = 'day' } = {}) {
-    this.element = null;
-    this.currentSortType = currentSortType;
+    super();
+    this.#currentSortType = currentSortType;
   }
 
-  getTemplate() {
-    return createTripSortTemplate(this.currentSortType);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    return createTripSortTemplate(this.#currentSortType);
   }
 }

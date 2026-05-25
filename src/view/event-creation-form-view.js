@@ -1,4 +1,4 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { upperFirst, formatEventDate } from '../utils.js';
 import { EVENT_TYPES } from '../const.js';
 
@@ -229,44 +229,37 @@ const createEventCreationFormTemplate = (data = {}) => {
 `;
 };
 
-export default class EventCreationFormView {
+export default class EventCreationFormView extends AbstractView {
+  #point = null;
+  #allOffers = [];
+  #destination = null;
+  #allDestinations = [];
+
   constructor({
     point = null,
     allOffers = [],
     destination = null,
     allDestinations = []
   } = {}) {
-    this.element = null;
-    this.point = point;
-    this.allOffers = allOffers;
-    this.destination = destination;
-    this.allDestinations = allDestinations;
+    super();
+    this.#point = point;
+    this.#allOffers = allOffers;
+    this.#destination = destination;
+    this.#allDestinations = allDestinations;
   }
 
-  getTemplate() {
+  get template() {
     const data = {
-      type: this.point?.type,
-      destination: this.destination,
-      allDestinations: this.allDestinations,
-      dateFrom: this.point?.dateFrom,
-      dateTo: this.point?.dateTo,
-      basePrice: this.point?.basePrice,
-      offers: this.allOffers?.offers || [],
-      selectedOffers: this.point?.offers || []
+      type: this.#point?.type,
+      destination: this.#destination,
+      allDestinations: this.#allDestinations,
+      dateFrom: this.#point?.dateFrom,
+      dateTo: this.#point?.dateTo,
+      basePrice: this.#point?.basePrice,
+      offers: this.#allOffers?.offers || [],
+      selectedOffers: this.#point?.offers || []
     };
 
     return createEventCreationFormTemplate(data);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
   }
 }
