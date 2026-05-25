@@ -37,8 +37,6 @@ const formatEventDuration = (dateFrom, dateTo) => {
 
 const upperFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-const getRandomArrayElement = (items) => items[Math.floor(Math.random() * items.length)];
-
 const isFuturePoint = (point) => dayjs(point.dateFrom).isAfter(dayjs());
 const isPresentPoint = (point) =>
   (dayjs(point.dateFrom).isBefore(dayjs()) || dayjs(point.dateFrom).isSame(dayjs())) &&
@@ -51,7 +49,26 @@ const countFuturePoints = (points) => countPointsByFilter(points, isFuturePoint)
 const countPresentPoints = (points) => countPointsByFilter(points, isPresentPoint);
 const countPastPoints = (points) => countPointsByFilter(points, isPastPoint);
 
-const sortPointsByDate = (points) => [...points].sort((a, b) => dayjs(a.dateFrom).diff(dayjs(b.dateFrom)));
+const sortPointsByDate = (points) => [...points].sort((pointA, pointB) => {
+  const dateDiff = dayjs(pointA.dateFrom).diff(dayjs(pointB.dateFrom));
+
+  if (dateDiff !== 0) {
+    return dateDiff;
+  }
+
+  const durationA = dayjs(pointA.dateTo).diff(dayjs(pointA.dateFrom));
+  const durationB = dayjs(pointB.dateTo).diff(dayjs(pointB.dateFrom));
+
+  if (durationA !== durationB) {
+    return durationB - durationA;
+  }
+
+  if (pointA.basePrice !== pointB.basePrice) {
+    return pointB.basePrice - pointA.basePrice;
+  }
+
+  return String(pointA.id).localeCompare(String(pointB.id));
+});
 
 const getDestinationNameByPoint = (point, destinations) => {
   const destination = destinations.find((item) => item.id === point.destination);
@@ -106,10 +123,19 @@ const getTotalCost = (points, offers) => points.reduce((total, point) => {
   return total + point.basePrice + selectedOffersCost;
 }, 0);
 
+const sortPointsByTime = (points) => [...points].sort((pointA, pointB) => {
+  const durationA = dayjs(pointA.dateTo).diff(dayjs(pointA.dateFrom));
+  const durationB = dayjs(pointB.dateTo).diff(dayjs(pointB.dateFrom));
+  return durationB - durationA;
+});
+
+const sortPointsByPrice = (points) => [...points].sort((pointA, pointB) =>
+  pointB.basePrice - pointA.basePrice
+);
+
 export {
   upperFirst,
   formatEventDate,
-  getRandomArrayElement,
   sortPointsByDate,
   formatTripDate,
   countFuturePoints,
@@ -122,5 +148,7 @@ export {
   formatEventMonth,
   formatEventTime,
   formatEventDuration,
-  formatEventISODate
+  formatEventISODate,
+  sortPointsByTime,
+  sortPointsByPrice
 };

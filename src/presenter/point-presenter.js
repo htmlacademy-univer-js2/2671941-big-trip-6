@@ -1,6 +1,6 @@
 import EventEditFormView from '../view/event-edit-form-view.js';
 import TripPointView from '../view/trip-point-view.js';
-import { render, replace } from '../framework/render.js';
+import { render, replace, remove } from '../framework/render.js';
 
 export default class PointPresenter {
   #eventsContainer = null;
@@ -23,6 +23,20 @@ export default class PointPresenter {
   init() {
     this.#pointComponent = this.#createTripPointComponent();
     render(this.#pointComponent, this.#eventsContainer);
+  }
+
+  destroy() {
+    if (this.#editFormComponent !== null) {
+      remove(this.#editFormComponent);
+      this.#editFormComponent = null;
+    }
+
+    if (this.#pointComponent !== null) {
+      remove(this.#pointComponent);
+      this.#pointComponent = null;
+    }
+
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
   }
 
   resetView() {
