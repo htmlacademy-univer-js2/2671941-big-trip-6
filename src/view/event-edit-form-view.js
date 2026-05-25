@@ -145,7 +145,7 @@ const getDestinationByName = (allDestinations, destinationName) =>
 const getOffersByType = (allOffers, type) =>
   allOffers.find((item) => item.type === type)?.offers || [];
 
-const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers = []) => {
+const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers = [], isNewPoint = false) => {
   const {
     type = 'flight',
     basePrice = '',
@@ -213,9 +213,11 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
           <input
             class="event__input event__input--price"
             id="event-price-1"
-            type="text"
+            type="number"
             name="event-price"
             value="${basePrice}"
+            min="0"
+            step="1"
             autocomplete="off"
             autocorrect="off"
           >
@@ -226,12 +228,14 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
         </button>
 
         <button class="event__reset-btn" type="reset">
-          Delete
+          ${isNewPoint ? 'Cancel' : 'Delete'}
         </button>
 
+        ${isNewPoint ? '' : `
         <button class="event__rollup-btn" type="button">
           <span class="visually-hidden">Open event</span>
         </button>
+        `}
 
       </header>
 
@@ -253,12 +257,18 @@ export default class EventEditFormView extends AbstractStatefulView {
   #startDatepicker = null;
   #endDatepicker = null;
 
+  #onDeleteClick = null;
+
+  #isNewPoint = false;
+
   constructor({
     point = {},
     offers = [],
     allDestinations = [],
     onFormSubmit = null,
-    onRollupClick = null
+    onRollupClick = null,
+    onDeleteClick = null,
+    isNewPoint = false
   } = {}) {
     super();
 
@@ -266,6 +276,8 @@ export default class EventEditFormView extends AbstractStatefulView {
     this.#allDestinations = allDestinations;
     this.#onFormSubmit = onFormSubmit;
     this.#onRollupClick = onRollupClick;
+    this.#onDeleteClick = onDeleteClick;
+    this.#isNewPoint = isNewPoint;
 
     this._setState({
       ...point
@@ -275,17 +287,24 @@ export default class EventEditFormView extends AbstractStatefulView {
   }
 
   get template() {
-    return createEventEditFormTemplate(this._state, this.#allDestinations, this.#allOffers);
+    return createEventEditFormTemplate(
+      this._state,
+      this.#allDestinations,
+      this.#allOffers,
+      this.#isNewPoint
+    );
   }
 
   _restoreHandlers() {
+    const rollupButton = this.element.querySelector('.event__rollup-btn');
+
+    if (rollupButton) {
+      rollupButton.addEventListener('click', this.#rollupClickHandler);
+    }
+
     this.element
       .querySelector('form')
       .addEventListener('submit', this.#formSubmitHandler);
-
-    this.element
-      .querySelector('.event__rollup-btn')
-      .addEventListener('click', this.#rollupClickHandler);
 
     this.element
       .querySelectorAll('.event__offer-checkbox')
@@ -299,6 +318,18 @@ export default class EventEditFormView extends AbstractStatefulView {
     this.element
       .querySelector('.event__input--destination')
       .addEventListener('change', this.#destinationChangeHandler);
+
+    this.element
+      .querySelector('.event__input--price')
+      .addEventListener('change', this.#priceChangeHandler);
+
+    this.element
+      .querySelector('.event__input--price')
+      .addEventListener('input', this.#priceInputHandler);
+
+    this.element
+      .querySelector('.event__reset-btn')
+      .addEventListener('click', this.#deleteClickHandler);
 
     this.#setDatepickers();
   }
@@ -386,14 +417,40 @@ export default class EventEditFormView extends AbstractStatefulView {
     });
   };
 
+  #priceChangeHandler = (evt) => {
+    evt.preventDefault();
+
+    const value = Number(evt.target.value);
+
+    this._setState({
+      basePrice: value < 0 ? 0 : value
+    });
+  };
+
+  #priceInputHandler = (evt) => {
+    evt.target.value = evt.target.value.replace(/\D/g, '');
+  };
+
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-    this.#onFormSubmit?.(this._state);
+
+    const priceInput = this.element.querySelector('.event__input--price');
+    const price = Number(priceInput.value);
+
+    this.#onFormSubmit?.({
+      ...this._state,
+      basePrice: price < 0 ? 0 : price
+    });
   };
 
   #rollupClickHandler = (evt) => {
     evt.preventDefault();
     this.#onRollupClick?.();
+  };
+
+  #deleteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#onDeleteClick?.(this._state);
   };
 }
