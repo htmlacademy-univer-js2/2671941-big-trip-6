@@ -1,23 +1,24 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import { upperFirst, formatEventDate } from '../utils.js';
+import { formatEventDate } from '../utils/date.js';
+import { upperFirst } from '../utils/common.js';
 import { EVENT_TYPES } from '../const.js';
 
 const createEventTypeItem = (type, currentType, isDisabled) => `
-  <div class="event__type-item">
+  <div class='event__type-item'>
     <input
-      id="event-type-${type}-1"
-      class="event__type-input visually-hidden"
-      type="radio"
-      name="event-type"
-      value="${type}"
+      id='event-type-${type}-1'
+      class='event__type-input visually-hidden'
+      type='radio'
+      name='event-type'
+      value='${type}'
       ${type === currentType ? 'checked' : ''}
       ${isDisabled ? 'disabled' : ''}
     >
     <label
-      class="event__type-label event__type-label--${type}"
-      for="event-type-${type}-1"
+      class='event__type-label event__type-label--${type}'
+      for='event-type-${type}-1'
     >
       ${upperFirst(type)}
     </label>
@@ -25,72 +26,76 @@ const createEventTypeItem = (type, currentType, isDisabled) => `
 `;
 
 const createEventTypeList = (currentType, isDisabled) => `
-  <div class="event__type-list">
-    <fieldset class="event__type-group">
-      <legend class="visually-hidden">Event type</legend>
+  <div class='event__type-list'>
+    <fieldset class='event__type-group'>
+      <legend class='visually-hidden'>Event type</legend>
       ${EVENT_TYPES.map((type) => createEventTypeItem(type, currentType, isDisabled)).join('')}
     </fieldset>
   </div>
 `;
 
 const createTimeBlock = (dateFrom, dateTo, isDisabled) => `
-  <div class="event__field-group event__field-group--time">
-    <label class="visually-hidden" for="event-start-time-1">From</label>
+  <div class='event__field-group event__field-group--time'>
+    <label class='visually-hidden' for='event-start-time-1'>From</label>
     <input
-      class="event__input event__input--time"
-      id="event-start-time-1"
-      type="text"
-      name="event-start-time"
-      value="${formatEventDate(dateFrom)}"
+      class='event__input event__input--time'
+      id='event-start-time-1'
+      type='text'
+      name='event-start-time'
+      value='${formatEventDate(dateFrom)}'
       ${isDisabled ? 'disabled' : ''}
-      autocomplete="off"
-      autocorrect="off"
+      autocomplete='off'
+      autocorrect='off'
     >
     &mdash;
-    <label class="visually-hidden" for="event-end-time-1">To</label>
+    <label class='visually-hidden' for='event-end-time-1'>To</label>
     <input
-      class="event__input event__input--time"
-      id="event-end-time-1"
-      type="text"
-      name="event-end-time"
-      value="${formatEventDate(dateTo)}"
+      class='event__input event__input--time'
+      id='event-end-time-1'
+      type='text'
+      name='event-end-time'
+      value='${formatEventDate(dateTo)}'
       ${isDisabled ? 'disabled' : ''}
-      autocomplete="off"
-      autocorrect="off"
+      autocomplete='off'
+      autocorrect='off'
     >
   </div>
 `;
 
 const createOfferItem = (offer, isChecked = false, isDisabled = false) => `
-  <div class="event__offer-selector">
+  <div class='event__offer-selector'>
     <input
-      class="event__offer-checkbox visually-hidden"
-      id="event-offer-${offer.id}"
-      type="checkbox"
-      name="event-offer"
-      value="${offer.id}"
+      class='event__offer-checkbox visually-hidden'
+      id='event-offer-${offer.id}'
+      type='checkbox'
+      name='event-offer'
+      value='${offer.id}'
       ${isChecked ? 'checked' : ''}
       ${isDisabled ? 'disabled' : ''}
     >
-    <label class="event__offer-label" for="event-offer-${offer.id}">
-      <span class="event__offer-title">${offer.title}</span>
+    <label class='event__offer-label' for='event-offer-${offer.id}'>
+      <span class='event__offer-title'>${offer.title}</span>
       &plus;&euro;&nbsp;
-      <span class="event__offer-price">${offer.price}</span>
+      <span class='event__offer-price'>${offer.price}</span>
     </label>
   </div>
 `;
 
-const createOffersSection = (offers = [], selectedOffers = [], isDisabled = false) => {
+const createOffersSection = (
+  offers = [],
+  selectedOffers = [],
+  isDisabled = false,
+) => {
   if (!offers.length) {
     return '';
   }
 
   return `
-  <section class="event__section event__section--offers">
-    <h3 class="event__section-title event__section-title--offers">
+  <section class='event__section event__section--offers'>
+    <h3 class='event__section-title event__section-title--offers'>
       Offers
     </h3>
-    <div class="event__available-offers">
+    <div class='event__available-offers'>
       ${offers.map((offer) => createOfferItem(offer, selectedOffers.includes(offer.id), isDisabled)).join('')}
     </div>
   </section>
@@ -105,21 +110,25 @@ const createDestinationSection = (destination) => {
   const description = destination.description || '';
   const pictures = destination.pictures || [];
 
-  const photosTape = pictures.map((pic) => `
-    <img class="event__photo" src="${pic.src}" alt="${pic.description || 'Event photo'}">
-  `).join('');
+  const photosTape = pictures
+    .map(
+      (pic) => `
+    <img class='event__photo' src='${pic.src}' alt='${pic.description || 'Event photo'}'>
+  `,
+    )
+    .join('');
 
   return `
-  <section class="event__section event__section--destination">
-    <h3 class="event__section-title event__section-title--destination">
+  <section class='event__section event__section--destination'>
+    <h3 class='event__section-title event__section-title--destination'>
       Destination
     </h3>
 
-    ${description ? `<p class="event__destination-description">${description}</p>` : ''}
+    ${description ? `<p class='event__destination-description'>${description}</p>` : ''}
 
     ${pictures.length > 0 ? `
-    <div class="event__photos-container">
-      <div class="event__photos-tape">
+    <div class='event__photos-container'>
+      <div class='event__photos-tape'>
         ${photosTape}
       </div>
     </div>
@@ -128,13 +137,19 @@ const createDestinationSection = (destination) => {
 `;
 };
 
-const createDestinationsList = (allDestinations = [], currentDestinationName) => {
-  const options = allDestinations.map((dest) =>
-    `<option value="${dest.name}" ${dest.name === currentDestinationName ? 'selected' : ''}></option>`
-  ).join('');
+const createDestinationsList = (
+  allDestinations = [],
+  currentDestinationName,
+) => {
+  const options = allDestinations
+    .map(
+      (dest) =>
+        `<option value='${dest.name}' ${dest.name === currentDestinationName ? 'selected' : ''}></option>`,
+    )
+    .join('');
 
   return `
-  <datalist id="destination-list-1">
+  <datalist id='destination-list-1'>
     ${options}
   </datalist>
 `;
@@ -149,7 +164,12 @@ const getDestinationByName = (allDestinations, destinationName) =>
 const getOffersByType = (allOffers, type) =>
   allOffers.find((item) => item.type === type)?.offers || [];
 
-const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers = [], isNewPoint = false) => {
+const createEventEditFormTemplate = (
+  state = {},
+  allDestinations = [],
+  allOffers = [],
+  isNewPoint = false,
+) => {
   const {
     type = 'flight',
     basePrice = '',
@@ -168,95 +188,95 @@ const createEventEditFormTemplate = (state = {}, allDestinations = [], allOffers
   const currentOffers = getOffersByType(allOffers, type);
 
   return `
-  <li class="trip-events__item">
-    <form class="event event--edit" action="#" method="post">
-      <header class="event__header">
+  <li class='trip-events__item'>
+    <form class='event event--edit' action='#' method='post'>
+      <header class='event__header'>
 
-        <div class="event__type-wrapper">
-          <label class="event__type event__type-btn" for="event-type-toggle-1">
-            <span class="visually-hidden">Choose event type</span>
+        <div class='event__type-wrapper'>
+          <label class='event__type event__type-btn' for='event-type-toggle-1'>
+            <span class='visually-hidden'>Choose event type</span>
             <img
-              class="event__type-icon"
-              width="17"
-              height="17"
-              src="img/icons/${typeIcon}.png"
-              alt="Event type icon"
+              class='event__type-icon'
+              width='17'
+              height='17'
+              src='img/icons/${typeIcon}.png'
+              alt='Event type icon'
             >
           </label>
 
           <input
-            class="event__type-toggle visually-hidden"
-            id="event-type-toggle-1"
-            type="checkbox"
+            class='event__type-toggle visually-hidden'
+            id='event-type-toggle-1'
+            type='checkbox'
           >
 
           ${createEventTypeList(type, isDisabled)}
         </div>
 
-        <div class="event__field-group event__field-group--destination">
-          <label class="event__label event__type-output" for="event-destination-1">
+        <div class='event__field-group event__field-group--destination'>
+          <label class='event__label event__type-output' for='event-destination-1'>
             ${upperFirst(type)}
           </label>
           <input
-            class="event__input event__input--destination"
-            id="event-destination-1"
-            type="text"
-            name="event-destination"
-            value="${destinationName}"
+            class='event__input event__input--destination'
+            id='event-destination-1'
+            type='text'
+            name='event-destination'
+            value='${destinationName}'
             ${isDisabled ? 'disabled' : ''}
-            list="destination-list-1"
-            autocomplete="off"
-            autocorrect="off"
+            list='destination-list-1'
+            autocomplete='off'
+            autocorrect='off'
           >
           ${createDestinationsList(allDestinations, destinationName)}
         </div>
 
         ${createTimeBlock(dateFrom, dateTo, isDisabled)}
 
-        <div class="event__field-group event__field-group--price">
-          <label class="event__label" for="event-price-1">
-            <span class="visually-hidden">Price</span>
+        <div class='event__field-group event__field-group--price'>
+          <label class='event__label' for='event-price-1'>
+            <span class='visually-hidden'>Price</span>
             &euro;
           </label>
           <input
-            class="event__input event__input--price"
-            id="event-price-1"
-            type="number"
-            name="event-price"
-            value="${basePrice}"
+            class='event__input event__input--price'
+            id='event-price-1'
+            type='number'
+            name='event-price'
+            value='${basePrice}'
             ${isDisabled ? 'disabled' : ''}
-            min="0"
-            step="1"
-            autocomplete="off"
-            autocorrect="off"
+            min='0'
+            step='1'
+            autocomplete='off'
+            autocorrect='off'
           >
         </div>
 
         <button
-          class="event__save-btn btn btn--blue"
-          type="submit"
+          class='event__save-btn btn btn--blue'
+          type='submit'
           ${isDisabled ? 'disabled' : ''}
         >
           ${isSaving ? 'Saving...' : 'Save'}
         </button>
 
         <button
-          class="event__reset-btn"
-          type="reset"
+          class='event__reset-btn'
+          type='reset'
           ${isDisabled ? 'disabled' : ''}
         >
           ${isDeleting ? 'Deleting...' : (isNewPoint && 'Cancel') || 'Delete'}
         </button>
 
-        ${isNewPoint ? '' : `
-        <button class="event__rollup-btn" type="button">
-          <span class="visually-hidden">Open event</span>
-        </button>
+        ${ isNewPoint ? '' : `
+            <button class='event__rollup-btn' type='button'>
+              <span class='visually-hidden'>Open event</span>
+            </button>
         `}
 
       </header>
 
-      <section class="event__details">
+      <section class='event__details'>
         ${createOffersSection(currentOffers, selectedOffers, isDisabled)}
         ${createDestinationSection(destination)}
       </section>
@@ -285,7 +305,7 @@ export default class EventEditFormView extends AbstractStatefulView {
     onFormSubmit = null,
     onRollupClick = null,
     onDeleteClick = null,
-    isNewPoint = false
+    isNewPoint = false,
   } = {}) {
     super();
 
@@ -297,7 +317,7 @@ export default class EventEditFormView extends AbstractStatefulView {
     this.#isNewPoint = isNewPoint;
 
     this._setState({
-      ...point
+      ...point,
     });
 
     this._restoreHandlers();
@@ -308,7 +328,7 @@ export default class EventEditFormView extends AbstractStatefulView {
       this._state,
       this.#allDestinations,
       this.#allOffers,
-      this.#isNewPoint
+      this.#isNewPoint,
     );
   }
 
@@ -326,15 +346,22 @@ export default class EventEditFormView extends AbstractStatefulView {
     this.element
       .querySelectorAll('.event__offer-checkbox')
       .forEach((item) =>
-        item.addEventListener('change', this.#offerChangeHandler));
+        item.addEventListener('change', this.#offerChangeHandler),
+      );
 
     this.element
       .querySelectorAll('.event__type-input')
-      .forEach((item) => item.addEventListener('change', this.#typeChangeHandler));
+      .forEach((item) =>
+        item.addEventListener('change', this.#typeChangeHandler),
+      );
 
     this.element
       .querySelector('.event__input--destination')
       .addEventListener('change', this.#destinationChangeHandler);
+
+    this.element
+      .querySelector('.event__input--destination')
+      .addEventListener('blur', this.#destinationBlurHandler);
 
     this.element
       .querySelector('.event__input--price')
@@ -372,7 +399,7 @@ export default class EventEditFormView extends AbstractStatefulView {
         this._state.dateFrom = selectedDate;
 
         this.#endDatepicker.set('minDate', selectedDate);
-      }
+      },
     });
 
     this.#endDatepicker = flatpickr(endInput, {
@@ -387,7 +414,7 @@ export default class EventEditFormView extends AbstractStatefulView {
           this.#endDatepicker.setDate(this._state.dateFrom);
           this._state.dateTo = this._state.dateFrom;
         }
-      }
+      },
     });
 
     if (this._state.dateFrom) {
@@ -407,7 +434,7 @@ export default class EventEditFormView extends AbstractStatefulView {
     }
 
     this.updateElement({
-      offers: updatedOffers
+      offers: updatedOffers,
     });
   };
 
@@ -416,21 +443,24 @@ export default class EventEditFormView extends AbstractStatefulView {
 
     this.updateElement({
       type: evt.target.value,
-      offers: []
+      offers: [],
     });
   };
 
   #destinationChangeHandler = (evt) => {
     evt.preventDefault();
 
-    const selectedDestination = getDestinationByName(this.#allDestinations, evt.target.value);
+    const selectedDestination = getDestinationByName(
+      this.#allDestinations,
+      evt.target.value,
+    );
 
     if (!selectedDestination) {
       return;
     }
 
     this.updateElement({
-      destination: selectedDestination.id
+      destination: selectedDestination.id,
     });
   };
 
@@ -440,7 +470,7 @@ export default class EventEditFormView extends AbstractStatefulView {
     const value = Number(evt.target.value);
 
     this._setState({
-      basePrice: value < 0 ? 0 : value
+      basePrice: value < 0 ? 0 : value,
     });
   };
 
@@ -448,20 +478,40 @@ export default class EventEditFormView extends AbstractStatefulView {
     evt.target.value = evt.target.value.replace(/\D/g, '');
   };
 
-
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
 
     const priceInput = this.element.querySelector('.event__input--price');
     const price = Number(priceInput.value);
-    const destinationInput = this.element.querySelector('.event__input--destination');
-    const selectedDestination = getDestinationByName(this.#allDestinations, destinationInput.value);
+    const destinationInput = this.element.querySelector(
+      '.event__input--destination',
+    );
+    const selectedDestination = getDestinationByName(
+      this.#allDestinations,
+      destinationInput.value,
+    );
 
     this.#onFormSubmit?.({
       ...this._state,
       destination: selectedDestination?.id || this._state.destination,
-      basePrice: price < 0 ? 0 : price
+      basePrice: price < 0 ? 0 : price,
     });
+  };
+
+  #destinationBlurHandler = (evt) => {
+    const selectedDestination = getDestinationByName(
+      this.#allDestinations,
+      evt.target.value,
+    );
+
+    if (!selectedDestination) {
+      const currentDestination = getDestinationById(
+        this.#allDestinations,
+        this._state.destination,
+      );
+
+      evt.target.value = currentDestination ? currentDestination.name : '';
+    }
   };
 
   #rollupClickHandler = (evt) => {

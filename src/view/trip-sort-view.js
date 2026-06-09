@@ -1,5 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import { upperFirst } from '../utils.js';
+import { upperFirst } from '../utils/common.js';
 import { SORT_TYPES, SortType } from '../const.js';
 
 const createSortItem = (sortType, currentSortType, isDisabled = false) => `
