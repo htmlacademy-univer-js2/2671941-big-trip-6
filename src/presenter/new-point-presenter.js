@@ -1,5 +1,6 @@
 import EventEditFormView from '../view/event-edit-form-view.js';
 import { render, remove } from '../framework/render.js';
+import { isEscapeKey } from '../utils/escape.js';
 
 const BLANK_POINT = {
   id: crypto.randomUUID(),
@@ -27,7 +28,7 @@ export default class NewPointPresenter {
     this.#onDestroy = onDestroy;
   }
 
-  init() {
+  init(container) {
     if (this.#newPointComponent !== null) {
       return;
     }
@@ -45,9 +46,7 @@ export default class NewPointPresenter {
       isNewPoint: true
     });
 
-    const sortComponent = this.#eventsContainer.querySelector('.trip-sort');
-
-    render(this.#newPointComponent, sortComponent, 'afterend');
+    render(this.#newPointComponent, container, 'afterbegin');
 
     document.addEventListener('keydown', this.#escKeyDownHandler);
   }
@@ -71,6 +70,13 @@ export default class NewPointPresenter {
     });
   }
 
+  setDeleting() {
+    this.#newPointComponent.updateElement({
+      isDisabled: true,
+      isDeleting: true,
+    });
+  }
+
   setAborting() {
     const resetFormState = () => {
       this.#newPointComponent.updateElement({
@@ -87,7 +93,7 @@ export default class NewPointPresenter {
   };
 
   #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape' || evt.key === 'Esc') {
+    if (isEscapeKey(evt.key)) {
       evt.preventDefault();
       this.destroy();
     }
