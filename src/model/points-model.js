@@ -1,6 +1,8 @@
 import Observable from '../framework/observable.js';
 import { UpdateType } from '../const.js';
 
+const NOT_FOUND_INDEX = -1;
+
 export default class PointsModel extends Observable {
   #pointsApiService = null;
   #points = [];
@@ -10,10 +12,6 @@ export default class PointsModel extends Observable {
   constructor({ pointsApiService }) {
     super();
     this.#pointsApiService = pointsApiService;
-  }
-
-  get points() {
-    return this.#points;
   }
 
   get destinations() {
@@ -54,7 +52,7 @@ export default class PointsModel extends Observable {
   async updatePoint(updateType, updatedPoint) {
     const index = this.#points.findIndex((point) => point.id === updatedPoint.id);
 
-    if (index === -1) {
+    if (index === NOT_FOUND_INDEX) {
       throw new Error('Can\'t update unexisting point');
     }
 
@@ -79,10 +77,7 @@ export default class PointsModel extends Observable {
       const response = await this.#pointsApiService.addPoint(newPoint);
       const adaptedPoint = this.#adaptToClient(response);
 
-      this.#points = [
-        adaptedPoint,
-        ...this.#points,
-      ];
+      this.#points = [adaptedPoint,...this.#points];
 
       this._notify(updateType, adaptedPoint);
     } catch (err) {
@@ -93,7 +88,7 @@ export default class PointsModel extends Observable {
   async deletePoint(updateType, pointToDelete) {
     const index = this.#points.findIndex((point) => point.id === pointToDelete.id);
 
-    if (index === -1) {
+    if (index === NOT_FOUND_INDEX) {
       throw new Error('Can\'t delete unexisting point');
     }
 

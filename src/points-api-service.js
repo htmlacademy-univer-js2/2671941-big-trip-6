@@ -64,11 +64,12 @@ export default class PointsApiService extends ApiService {
   }
 
   #adaptToServer(point) {
-    const adaptedPoint = {...point,
+    const adaptedPoint = {
+      ...point,
       'base_price': Number(point.basePrice),
       'date_from': point.dateFrom instanceof Date ? point.dateFrom.toISOString() : null,
       'date_to': point.dateTo instanceof Date ? point.dateTo.toISOString() : null,
-      'is_favorite': point.isFavorite
+      'is_favorite': point.isFavorite,
     };
 
     delete adaptedPoint.id;
@@ -76,6 +77,10 @@ export default class PointsApiService extends ApiService {
     delete adaptedPoint.dateTo;
     delete adaptedPoint.isFavorite;
     delete adaptedPoint.basePrice;
+
+    delete adaptedPoint.isDisabled;
+    delete adaptedPoint.isSaving;
+    delete adaptedPoint.isDeleting;
 
     return adaptedPoint;
   }

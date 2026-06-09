@@ -1,24 +1,25 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import { upperFirst } from '../utils.js';
+import { upperFirst } from '../utils/common.js';
 import { FILTER_TYPES } from '../const.js';
 
 const createFilterItem = (filterType, currentFilterType, filtersInfo) => {
-  const isDisabled = filterType !== 'everything' && filtersInfo[filterType] === 0;
+  const isDisabled =
+    filtersInfo[filterType] === 0;
 
   return `
-    <div class="trip-filters__filter">
+    <div class='trip-filters__filter'>
       <input
-        id="filter-${filterType}"
-        class="trip-filters__filter-input visually-hidden"
-        type="radio"
-        name="trip-filter"
-        value="${filterType}"
+        id='filter-${filterType}'
+        class='trip-filters__filter-input visually-hidden'
+        type='radio'
+        name='trip-filter'
+        value='${filterType}'
         ${filterType === currentFilterType ? 'checked' : ''}
         ${isDisabled ? 'disabled' : ''}
       >
       <label
-        class="trip-filters__filter-label"
-        for="filter-${filterType}"
+        class='trip-filters__filter-label'
+        for='filter-${filterType}'
       >
         ${upperFirst(filterType)}
       </label>
@@ -26,10 +27,13 @@ const createFilterItem = (filterType, currentFilterType, filtersInfo) => {
   `;
 };
 
-const createTripFilterTemplate = (filtersInfo, currentFilterType = 'everything') => `
-  <form class="trip-filters" action="#" method="get">
+const createTripFilterTemplate = (
+  filtersInfo,
+  currentFilterType = 'everything',
+) => `
+  <form class='trip-filters' action='#' method='get'>
     ${FILTER_TYPES.map((filterType) => createFilterItem(filterType, currentFilterType, filtersInfo)).join('')}
-    <button class="visually-hidden" type="submit">Accept filter</button>
+    <button class='visually-hidden' type='submit'>Accept filter</button>
   </form>
 `;
 
@@ -38,7 +42,11 @@ export default class TripFilterView extends AbstractView {
   #filtersInfo = {};
   #handleFilterTypeChange = null;
 
-  constructor({ currentFilterType = 'everything', filtersInfo, onFilterTypeChange } = {}) {
+  constructor({
+    currentFilterType = 'everything',
+    filtersInfo,
+    onFilterTypeChange,
+  } = {}) {
     super();
     this.#currentFilterType = currentFilterType;
     this.#filtersInfo = filtersInfo;

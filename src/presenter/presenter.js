@@ -1,5 +1,6 @@
 import TripInfoView from '../view/trip-info-view.js';
 import TripSortView from '../view/trip-sort-view.js';
+import EventListView from '../view/event-list-view.js';
 import NoPointsView from '../view/no-points-view.js';
 import LoadingView from '../view/loading-view.js';
 import PointPresenter from './point-presenter.js';
@@ -10,17 +11,21 @@ import {
   sortPointsByDate,
   sortPointsByTime,
   sortPointsByPrice,
+} from '../utils/sort.js';
+import {
   getTripTitle,
   getTripDates,
   getTotalCost
-} from '../utils.js';
+} from '../utils/trip-info.js';
 import { SortType, FilterType, UpdateType, UserAction } from '../const.js';
 
 
 const TimeLimit = {
-  LOWER_LIMIT: 350,
+  LOWER_LIMIT: 0,
   UPPER_LIMIT: 1000,
 };
+
+const RESET_SORT_TYPE = SortType.DAY;
 
 export default class TripPresenter {
   #tripMainContainer = null;
@@ -30,10 +35,11 @@ export default class TripPresenter {
 
   #pointPresenters = new Map();
   #newPointPresenter = null;
-  #currentSortType = SortType.DAY;
+  #currentSortType = RESET_SORT_TYPE;
   #sortComponent = null;
   #noPointsComponent = null;
   #tripInfoComponent = null;
+  #eventListComponent = null;
 
   #newEventButton = null;
 
@@ -76,7 +82,11 @@ export default class TripPresenter {
     const destinations = this.#pointsModel.getDestinations();
     const offers = this.#pointsModel.getOffers();
 
-    this.#renderTripInfo(points, destinations, offers);
+    this.#renderTripInfo(
+      this.#pointsModel.getPoints(),
+      destinations,
+      offers
+    );
 
     if (points.length === 0) {
       this.#renderNoPoints();
@@ -169,14 +179,21 @@ export default class TripPresenter {
     render(this.#noPointsComponent, this.#eventsContainer);
   }
 
+  #renderEventList() {
+    this.#eventListComponent = new EventListView();
+    render(this.#eventListComponent, this.#eventsContainer);
+  }
+
   #renderPoints() {
+    this.#renderEventList();
+
     const sortedPoints = this.#getSortedPoints();
     sortedPoints.forEach((point) => this.#renderPoint(point));
   }
 
   #renderPoint(point) {
     const pointPresenter = new PointPresenter({
-      eventsContainer: this.#eventsContainer,
+      eventsContainer: this.#eventListComponent.element,
       pointsModel: this.#pointsModel,
       point,
       onModeChange: this.#handleModeChange,
@@ -203,6 +220,11 @@ export default class TripPresenter {
       remove(this.#noPointsComponent);
       this.#noPointsComponent = null;
     }
+
+    if (this.#eventListComponent !== null) {
+      remove(this.#eventListComponent);
+      this.#eventListComponent = null;
+    }
   }
 
   #clearPoints() {
@@ -216,21 +238,16 @@ export default class TripPresenter {
         this.#pointPresenters.get(data.id).updatePoint(data);
 
         this.#renderTripInfo(
-          this.#getFilteredPoints(),
+          this.#pointsModel.getPoints(),
           this.#pointsModel.getDestinations(),
           this.#pointsModel.getOffers()
         );
         break;
 
       case UpdateType.MINOR:
-        this.#clearBoard();
-        this.#currentSortType = SortType.DAY;
-        this.init();
-        break;
-
       case UpdateType.MAJOR:
         this.#clearBoard();
-        this.#currentSortType = SortType.DAY;
+        this.#currentSortType = RESET_SORT_TYPE;
         this.init();
         break;
 
@@ -244,6 +261,9 @@ export default class TripPresenter {
   };
 
   #handleModeChange = () => {
+    this.#newPointPresenter.destroy();
+    this.#newEventButton.disabled = false;
+
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
@@ -254,9 +274,7 @@ export default class TripPresenter {
       pointPresenter &&
       !pointPresenter.isEditFormOpen();
 
-    if (!isFavoriteAction) {
-      this.#uiBlocker.block();
-    }
+    this.#uiBlocker.block();
 
     switch (actionType) {
       case UserAction.UPDATE_POINT:
@@ -271,9 +289,7 @@ export default class TripPresenter {
             pointPresenter.setAborting();
           }
         } finally {
-          if (!isFavoriteAction) {
-            this.#uiBlocker.unblock();
-          }
+          this.#uiBlocker.unblock();
         }
         break;
 
@@ -317,7 +333,7 @@ export default class TripPresenter {
 
   #handleNewEventButtonClick = () => {
     this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
-    this.#currentSortType = SortType.DAY;
+    this.#currentSortType = RESET_SORT_TYPE;
     this.#handleModeChange();
 
     if (this.#noPointsComponent !== null) {
@@ -329,7 +345,9 @@ export default class TripPresenter {
       this.#renderSort();
     }
 
-    this.#newPointPresenter.init();
+    this.#newPointPresenter.init(
+      this.#eventListComponent?.element || this.#eventsContainer
+    );
     this.#newEventButton.disabled = true;
   };
 
@@ -343,5 +361,14 @@ export default class TripPresenter {
 
   #handleNewPointFormClose = () => {
     this.#newEventButton.disabled = false;
+
+    if (this.#getFilteredPoints().length === 0) {
+      if (this.#sortComponent !== null) {
+        remove(this.#sortComponent);
+        this.#sortComponent = null;
+      }
+
+      this.#renderNoPoints();
+    }
   };
 }

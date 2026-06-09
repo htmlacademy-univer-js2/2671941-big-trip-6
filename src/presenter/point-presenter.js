@@ -2,6 +2,7 @@ import EventEditFormView from '../view/event-edit-form-view.js';
 import TripPointView from '../view/trip-point-view.js';
 import { render, replace, remove } from '../framework/render.js';
 import { UserAction, UpdateType } from '../const.js';
+import { isEscapeKey } from '../utils/escape.js';
 
 export default class PointPresenter {
   #eventsContainer = null;
@@ -124,7 +125,7 @@ export default class PointPresenter {
   #handleFormSubmit = (updatedPoint) => {
     this.#onDataChange(
       UserAction.UPDATE_POINT,
-      UpdateType.PATCH,
+      UpdateType.MINOR,
       updatedPoint
     );
   };
@@ -165,7 +166,7 @@ export default class PointPresenter {
   };
 
   #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape' || evt.key === 'Esc') {
+    if (isEscapeKey(evt.key)) {
       evt.preventDefault();
       this.#replaceEditFormToPoint();
     }

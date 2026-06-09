@@ -1,11 +1,11 @@
 import TripFilterView from '../view/trip-filter-view.js';
 import { render, replace, remove } from '../framework/render.js';
-import { UpdateType } from '../const.js';
+import { UpdateType, FilterType } from '../const.js';
 import {
   countFuturePoints,
   countPresentPoints,
-  countPastPoints
-} from '../utils.js';
+  countPastPoints,
+} from '../utils/filter.js';
 
 export default class FilterPresenter {
   #filtersContainer = null;
@@ -28,17 +28,12 @@ export default class FilterPresenter {
 
     const points = this.#pointsModel.getPoints();
 
-    const filtersInfo = {
-      everything: points.length,
-      future: countFuturePoints(points),
-      present: countPresentPoints(points),
-      past: countPastPoints(points)
-    };
+    const filtersInfo = this.#getFiltersInfo(points);
 
     this.#filterComponent = new TripFilterView({
       currentFilterType: this.#filterModel.filter,
       filtersInfo,
-      onFilterTypeChange: this.#handleFilterTypeChange
+      onFilterTypeChange: this.#handleFilterTypeChange,
     });
 
     if (previousFilterComponent === null) {
@@ -48,6 +43,15 @@ export default class FilterPresenter {
 
     replace(this.#filterComponent, previousFilterComponent);
     remove(previousFilterComponent);
+  }
+
+  #getFiltersInfo(points) {
+    return {
+      [FilterType.EVERYTHING]: points.length,
+      [FilterType.FUTURE]: countFuturePoints(points),
+      [FilterType.PRESENT]: countPresentPoints(points),
+      [FilterType.PAST]: countPastPoints(points),
+    };
   }
 
   #handleFilterTypeChange = (filterType) => {
